@@ -82,13 +82,18 @@ This Action accepts the following configuration parameters via `with:`
 
 ## Outputs
 
-This Action emits a single output named `conclusion`. Like the field of the same name in the [CheckRunEvent API Response](https://developer.github.com/v3/activity/events/types/#checkrunevent-api-payload), it may be one of the following values:
+This Action emits a single output named `conclusion`. It may be one of the following values:
 
 - `success`
 - `failure`
 - `neutral`
-- `timed_out`
 - `action_required`
+- `skipped`
+- `stale`
+- `cancelled`
+- `timed_out`
 - `not_found`
 
-These correspond to the `conclusion` state of the Check you're waiting on. In addition, this action will emit a conclusion of `timed_out` if the Check specified didn't complete within `timeoutSeconds`, or `not_found` if no check was found.
+
+These correspond to the `conclusion` state of the Check you're waiting on (see [Documentation](https://docs.github.com/en/rest/checks/runs?apiVersion=2022-11-28#update-a-check-run)).
+In addition, this action will emit a conclusion of `timed_out` if the Check specified didn't complete within `timeoutSeconds`, or `not_found` if no check was found within the warmup period.
