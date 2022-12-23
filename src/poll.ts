@@ -17,13 +17,14 @@ export interface Options {
   ref: string
 }
 
-export const poll = async (options: Options): Promise<string> => {
+export const poll = async (options: Options): Promise<{conclusion: string; foundRunning: boolean}> => {
   const {client, log, checkName, timeoutSeconds, intervalSeconds, warmupSeconds, owner, repo, ref} = options
 
   let now = new Date().getTime()
   const deadline = now + timeoutSeconds * 1000
   const warmupDeadline = now + warmupSeconds * 1000
   let foundRun = false
+  let foundRunning = false
 
   while (now <= deadline) {
     log(`Retrieving check runs named ${checkName} on ${owner}/${repo}@${ref}...`)
@@ -40,7 +41,7 @@ export const poll = async (options: Options): Promise<string> => {
 
     if (now >= warmupDeadline && !foundRun) {
       log(`No checks found after ${warmupSeconds} seconds, exiting with conclusion 'not_found'`)
-      return 'not_found'
+      return {conclusion: 'not_found', foundRunning}
     }
 
     const lastStartedCheck = getLastStartedCheck(result.data.check_runs)
@@ -48,8 +49,9 @@ export const poll = async (options: Options): Promise<string> => {
       log(`Found a completed check with id ${lastStartedCheck.id} and conclusion ${lastStartedCheck.conclusion}`)
       // conclusion is only `null` if status is not `completed`.
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return lastStartedCheck.conclusion!
+      return {conclusion: lastStartedCheck.conclusion!, foundRunning}
     }
+    foundRunning = true
 
     log(`No completed checks named ${checkName}, waiting for ${intervalSeconds} seconds...`)
     await wait(intervalSeconds * 1000)
@@ -58,7 +60,7 @@ export const poll = async (options: Options): Promise<string> => {
   }
 
   log(`No completed checks after ${timeoutSeconds} seconds, exiting with conclusion 'timed_out'`)
-  return 'timed_out'
+  return {conclusion: 'timed_out', foundRunning}
 }
 function getLastStartedCheck(checks: CheckRun[]): CheckRun | undefined {
   if (checks.length === 0) return undefined

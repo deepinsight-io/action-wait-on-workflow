@@ -58,7 +58,8 @@ function run() {
                 intervalSeconds: parseInt(core.getInput('intervalSeconds') || '10'),
                 warmupSeconds: parseInt(core.getInput('warmupSeconds') || '10')
             });
-            core.setOutput('conclusion', result);
+            core.setOutput('conclusion', result.conclusion);
+            core.setOutput('foundRunning', result.foundRunning);
         }
         catch (error) {
             core.setFailed(error instanceof Error ? error : JSON.stringify(error));
@@ -94,6 +95,7 @@ const poll = (options) => __awaiter(void 0, void 0, void 0, function* () {
     const deadline = now + timeoutSeconds * 1000;
     const warmupDeadline = now + warmupSeconds * 1000;
     let foundRun = false;
+    let foundRunning = false;
     while (now <= deadline) {
         log(`Retrieving check runs named ${checkName} on ${owner}/${repo}@${ref}...`);
         const result = yield client.rest.checks.listForRef({
@@ -106,21 +108,22 @@ const poll = (options) => __awaiter(void 0, void 0, void 0, function* () {
         foundRun = foundRun || result.data.check_runs.length !== 0;
         if (now >= warmupDeadline && !foundRun) {
             log(`No checks found after ${warmupSeconds} seconds, exiting with conclusion 'not_found'`);
-            return 'not_found';
+            return { conclusion: 'not_found', foundRunning };
         }
         const lastStartedCheck = getLastStartedCheck(result.data.check_runs);
         if (lastStartedCheck !== undefined && lastStartedCheck.status === 'completed') {
             log(`Found a completed check with id ${lastStartedCheck.id} and conclusion ${lastStartedCheck.conclusion}`);
             // conclusion is only `null` if status is not `completed`.
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            return lastStartedCheck.conclusion;
+            return { conclusion: lastStartedCheck.conclusion, foundRunning };
         }
+        foundRunning = true;
         log(`No completed checks named ${checkName}, waiting for ${intervalSeconds} seconds...`);
         yield (0, wait_1.wait)(intervalSeconds * 1000);
         now = new Date().getTime();
     }
     log(`No completed checks after ${timeoutSeconds} seconds, exiting with conclusion 'timed_out'`);
-    return 'timed_out';
+    return { conclusion: 'timed_out', foundRunning };
 });
 exports.poll = poll;
 function getLastStartedCheck(checks) {

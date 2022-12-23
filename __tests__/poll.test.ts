@@ -42,7 +42,7 @@ test('returns conclusion of last (completed) check', async () => {
 
   const result = await run()
 
-  expect(result).toBe('success')
+  expect(result.conclusion).toBe('success')
   expect(client.rest.checks.listForRef).toHaveBeenCalledWith({
     owner: 'testOrg',
     repo: 'testRepo',
@@ -87,7 +87,7 @@ test('polls until check is completed', async () => {
 
   const result = await run()
 
-  expect(result).toBe('failure')
+  expect(result.conclusion).toBe('failure')
   expect(client.rest.checks.listForRef).toHaveBeenCalledTimes(3)
 })
 
@@ -104,7 +104,7 @@ test(`returns 'timed_out' if exceeding deadline`, async () => {
   })
 
   const result = await run()
-  expect(result).toBe('timed_out')
+  expect(result.conclusion).toBe('timed_out')
 })
 
 test(`returns 'not_found' if not found in warmup`, async () => {
@@ -115,7 +115,7 @@ test(`returns 'not_found' if not found in warmup`, async () => {
   })
 
   const result = await run()
-  expect(result).toBe('not_found')
+  expect(result.conclusion).toBe('not_found')
 })
 
 test('polls until all checks are completed', async () => {
@@ -175,7 +175,7 @@ test('polls until all checks are completed', async () => {
 
   const result = await run()
 
-  expect(result).toBe('success')
+  expect(result.conclusion).toBe('success')
   expect(client.rest.checks.listForRef).toHaveBeenCalledTimes(3)
 })
 
@@ -201,5 +201,5 @@ test('reflects the status of the last started run', async () => {
 
   const result = await run()
 
-  expect(result).toBe('failure')
+  expect(result.conclusion).toBe('failure')
 })
