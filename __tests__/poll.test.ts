@@ -21,18 +21,20 @@ const run = () =>
     warmupSeconds: 1
   })
 
-test('returns conclusion of completed check', async () => {
+test('returns conclusion of last (completed) check', async () => {
   client.rest.checks.listForRef.mockResolvedValue({
     data: {
       check_runs: [
         {
           id: '1',
-          status: 'pending'
+          status: 'pending',
+          started_at: '2018-05-04T01:14:52Z'
         },
         {
           id: '2',
           status: 'completed',
-          conclusion: 'success'
+          conclusion: 'success',
+          started_at: '2018-05-04T01:14:53Z'
         }
       ]
     }
@@ -114,4 +116,90 @@ test(`returns 'not_found' if not found in warmup`, async () => {
 
   const result = await run()
   expect(result).toBe('not_found')
+})
+
+test('polls until all checks are completed', async () => {
+  client.rest.checks.listForRef
+    .mockResolvedValueOnce({
+      data: {
+        check_runs: [
+          {
+            id: '1',
+            status: 'completed',
+            conclusion: 'failure',
+            started_at: '2018-05-04T01:14:52Z'
+          },
+          {
+            id: '2',
+            status: 'pending',
+            started_at: '2018-05-04T01:14:53Z'
+          }
+        ]
+      }
+    })
+    .mockResolvedValueOnce({
+      data: {
+        check_runs: [
+          {
+            id: '1',
+            status: 'completed',
+            conclusion: 'failure',
+            started_at: '2018-05-04T01:14:52Z'
+          },
+          {
+            id: '2',
+            status: 'pending',
+            started_at: '2018-05-04T01:14:53Z'
+          }
+        ]
+      }
+    })
+    .mockResolvedValueOnce({
+      data: {
+        check_runs: [
+          {
+            id: '1',
+            status: 'completed',
+            conclusion: 'failure',
+            started_at: '2018-05-04T01:14:52Z'
+          },
+          {
+            id: '2',
+            status: 'completed',
+            conclusion: 'success',
+            started_at: '2018-05-04T01:14:53Z'
+          }
+        ]
+      }
+    })
+
+  const result = await run()
+
+  expect(result).toBe('success')
+  expect(client.rest.checks.listForRef).toHaveBeenCalledTimes(3)
+})
+
+test('reflects the status of the last started run', async () => {
+  client.rest.checks.listForRef.mockResolvedValueOnce({
+    data: {
+      check_runs: [
+        {
+          id: '1',
+          status: 'completed',
+          conclusion: 'failure',
+          started_at: '2018-01-01T00:00:01Z'
+        },
+        {
+          id: '2',
+          status: 'completed',
+          conclusion: 'success',
+          started_at: '2018-01-01T00:00:00Z'
+        }
+      ]
+    }
+  })
+
+  const result = await run()
+
+  expect(result).toBe('failure')
 })

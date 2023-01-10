@@ -86,6 +86,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.poll = void 0;
 const wait_1 = __nccwpck_require__(5817);
+const utils_1 = __nccwpck_require__(918);
 const poll = (options) => __awaiter(void 0, void 0, void 0, function* () {
     const { client, log, checkName, timeoutSeconds, intervalSeconds, warmupSeconds, owner, repo, ref } = options;
     let now = new Date().getTime();
@@ -106,12 +107,13 @@ const poll = (options) => __awaiter(void 0, void 0, void 0, function* () {
             log(`No checks found after ${warmupSeconds} seconds, exiting with conclusion 'not_found'`);
             return 'not_found';
         }
-        const completedCheck = result.data.check_runs.find(checkRun => checkRun.status === 'completed');
-        if (completedCheck) {
-            log(`Found a completed check with id ${completedCheck.id} and conclusion ${completedCheck.conclusion}`);
+        const lastStartedCheck = getLastStartedCheck(result.data.check_runs);
+        if (lastStartedCheck !== undefined &&
+            lastStartedCheck.status === 'completed') {
+            log(`Found a completed check with id ${lastStartedCheck.id} and conclusion ${lastStartedCheck.conclusion}`);
             // conclusion is only `null` if status is not `completed`.
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            return completedCheck.conclusion;
+            return lastStartedCheck.conclusion;
         }
         log(`No completed checks named ${checkName}, waiting for ${intervalSeconds} seconds...`);
         yield (0, wait_1.wait)(intervalSeconds * 1000);
@@ -121,6 +123,42 @@ const poll = (options) => __awaiter(void 0, void 0, void 0, function* () {
     return 'timed_out';
 });
 exports.poll = poll;
+function getLastStartedCheck(checks) {
+    if (checks.length === 0)
+        return undefined;
+    return (0, utils_1.maxBy)(checks, c => {
+        if (c.started_at === null)
+            throw new Error('c.started_at === null');
+        return Date.parse(c.started_at);
+    });
+}
+
+
+/***/ }),
+
+/***/ 918:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.maxBy = void 0;
+function maxBy(array, selector) {
+    if (array.length === 0) {
+        throw new Error('Array empty');
+    }
+    let maxElement = array[0];
+    let maxValue = selector(maxElement);
+    for (const element of array) {
+        const value = selector(element);
+        if (value > maxValue) {
+            maxValue = value;
+            maxElement = element;
+        }
+    }
+    return maxElement;
+}
+exports.maxBy = maxBy;
 
 
 /***/ }),
