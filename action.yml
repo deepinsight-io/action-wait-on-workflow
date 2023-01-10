@@ -12,7 +12,9 @@ inputs:
     description: 'The name of the GitHub check to wait for. For example, `build` or `deploy`.'
     required: true
   ref:
-    description: 'The Git ref of the commit you want to poll for a passing check.'
+    description: |
+      The Git ref of the commit you want to poll for a passing check.
+      By default the PR head if present; otherwise the current sha.
   repo:
     description: 'The name of the GitHub repository you want to poll for a passing check.'
   owner:

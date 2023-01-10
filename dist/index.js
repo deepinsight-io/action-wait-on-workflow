@@ -43,6 +43,7 @@ const core = __importStar(__nccwpck_require__(2186));
 const github_1 = __nccwpck_require__(5438);
 const poll_1 = __nccwpck_require__(5498);
 function run() {
+    var _a;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const token = core.getInput('token', { required: true });
@@ -52,7 +53,7 @@ function run() {
                 checkName: core.getInput('checkName', { required: true }),
                 owner: core.getInput('owner') || github_1.context.repo.owner,
                 repo: core.getInput('repo') || github_1.context.repo.repo,
-                ref: core.getInput('ref') || github_1.context.sha,
+                ref: core.getInput('ref') || ((_a = github_1.context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.head.sha) || github_1.context.sha,
                 timeoutSeconds: parseInt(core.getInput('timeoutSeconds') || '600'),
                 intervalSeconds: parseInt(core.getInput('intervalSeconds') || '10'),
                 warmupSeconds: parseInt(core.getInput('warmupSeconds') || '60')
