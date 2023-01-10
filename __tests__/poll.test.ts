@@ -21,7 +21,7 @@ const run = () =>
     warmupSeconds: 1
   })
 
-test('returns conclusion of last check', async () => {
+test('returns conclusion of last (completed) check', async () => {
   client.rest.checks.listForRef.mockResolvedValue({
     data: {
       check_runs: [
