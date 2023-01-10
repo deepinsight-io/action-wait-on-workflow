@@ -1,5 +1,8 @@
 import {GitHub} from '@actions/github/lib/utils'
 import {wait} from './wait'
+import {maxBy} from './utils'
+import type {components} from '@octokit/openapi-types'
+type CheckRun = components['schemas']['check-run']
 
 export interface Options {
   client: InstanceType<typeof GitHub>
@@ -56,16 +59,17 @@ export const poll = async (options: Options): Promise<string> => {
       return 'not_found'
     }
 
-    const completedCheck = result.data.check_runs.find(
-      checkRun => checkRun.status === 'completed'
-    )
-    if (completedCheck) {
+    const lastStartedCheck = getLastStartedCheck(result.data.check_runs)
+    if (
+      lastStartedCheck !== undefined &&
+      lastStartedCheck.status === 'completed'
+    ) {
       log(
-        `Found a completed check with id ${completedCheck.id} and conclusion ${completedCheck.conclusion}`
+        `Found a completed check with id ${lastStartedCheck.id} and conclusion ${lastStartedCheck.conclusion}`
       )
       // conclusion is only `null` if status is not `completed`.
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return completedCheck.conclusion!
+      return lastStartedCheck.conclusion!
     }
 
     log(
@@ -80,4 +84,12 @@ export const poll = async (options: Options): Promise<string> => {
     `No completed checks after ${timeoutSeconds} seconds, exiting with conclusion 'timed_out'`
   )
   return 'timed_out'
+}
+function getLastStartedCheck(checks: CheckRun[]): CheckRun | undefined {
+  if (checks.length === 0) return undefined
+
+  return maxBy(checks, c => {
+    if (c.started_at === null) throw new Error('c.started_at === null')
+    return Date.parse(c.started_at)
+  })
 }
