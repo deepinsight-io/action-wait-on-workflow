@@ -17,7 +17,7 @@ async function run(): Promise<void> {
 
       timeoutSeconds: parseInt(core.getInput('timeoutSeconds') || '600'),
       intervalSeconds: parseInt(core.getInput('intervalSeconds') || '10'),
-      warmupSeconds: parseInt(core.getInput('warmupSeconds') || '30')
+      warmupSeconds: parseInt(core.getInput('warmupSeconds') || '10')
     })
 
     core.setOutput('conclusion', result)

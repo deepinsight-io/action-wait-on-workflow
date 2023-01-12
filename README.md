@@ -72,7 +72,7 @@ This Action accepts the following configuration parameters via `with:`
 
 - `warmupSeconds`
 
-  **Default: `30`**
+  **Default: `10`**
 
   The number of seconds to poll until a check is found. If no check is found within this amount of time, this Action will emit a `conclusion` value of `not_found`.
 

@@ -56,7 +56,7 @@ function run() {
                 ref: core.getInput('ref') || ((_a = github_1.context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.head.sha) || github_1.context.sha,
                 timeoutSeconds: parseInt(core.getInput('timeoutSeconds') || '600'),
                 intervalSeconds: parseInt(core.getInput('intervalSeconds') || '10'),
-                warmupSeconds: parseInt(core.getInput('warmupSeconds') || '60')
+                warmupSeconds: parseInt(core.getInput('warmupSeconds') || '10')
             });
             core.setOutput('conclusion', result);
         }
@@ -109,8 +109,7 @@ const poll = (options) => __awaiter(void 0, void 0, void 0, function* () {
             return 'not_found';
         }
         const lastStartedCheck = getLastStartedCheck(result.data.check_runs);
-        if (lastStartedCheck !== undefined &&
-            lastStartedCheck.status === 'completed') {
+        if (lastStartedCheck !== undefined && lastStartedCheck.status === 'completed') {
             log(`Found a completed check with id ${lastStartedCheck.id} and conclusion ${lastStartedCheck.conclusion}`);
             // conclusion is only `null` if status is not `completed`.
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
