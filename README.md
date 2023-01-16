@@ -1,3 +1,5 @@
+Note: this used to be a fork of [fountainhead/action-wait-for-check](https://github.com/fountainhead/action-wait-for-check)
+
 # GitHub Action: Wait for Check
 
 A GitHub Action that allows you to wait for another GitHub check to complete. This is useful if you want to run one Workflow after another one finishes.
