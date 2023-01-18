@@ -11,10 +11,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - run: |
+      - name: build and test
+        run: |
           npm ci --legacy-peer-deps  # TODO: remove flag
           npm run all
-  test: # make sure the action works on a clean machine without building
+
+  integration-test: # make sure the action works on a clean machine without building
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -28,3 +30,19 @@ jobs:
       - name: Fail if build did not succeed
         if: steps.wait-for-build.outputs.conclusion != 'success'
         run: exit 1
+  
+  ensure-npm-ran-pack: # make sure the js is compiled
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Back up current compiled js
+        run: mv dist/index.js dist/index.current.js
+
+      - name: npm install
+        run: npm ci --legacy-peer-deps  # TODO: remove flag
+
+      - name: ci
+        run: npm run pack
+
+      - name: ensure `npm run pack` was ran and committed
+        run: diff dist/index.js dist/index.current.js
