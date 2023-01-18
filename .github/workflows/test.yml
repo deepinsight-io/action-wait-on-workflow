@@ -45,7 +45,8 @@ jobs:
         run: npm run build && npm run pack
 
       - name: ensure `npm run pack` was ran and committed
-        run: diff dist/index.js dist/index.current.js \
-                  --ignore-space-change               \
-                  --ignore-blank-lines                \
-                  --strip-trailing-cr
+        run: 
+          diff dist/index.js dist/index.current.js \
+               --ignore-space-change               \
+               --ignore-blank-lines                \
+               --strip-trailing-cr
