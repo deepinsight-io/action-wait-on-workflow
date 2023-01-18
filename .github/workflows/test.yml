@@ -41,8 +41,8 @@ jobs:
       - name: npm install
         run: npm ci --legacy-peer-deps  # TODO: remove flag
 
-      - name: ci
-        run: npm run pack
+      - name: pack
+        run: npm run build && npm run pack
 
       - name: ensure `npm run pack` was ran and committed
         run: diff dist/index.js dist/index.current.js
