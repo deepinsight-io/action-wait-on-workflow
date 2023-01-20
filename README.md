@@ -80,18 +80,22 @@ This Action accepts the following configuration parameters via `with:`
 
 ## Outputs
 
-This Action emits a single output named `conclusion`. It may be one of the following values:
+This Action emits two outputs:
+- `conclusion`
+    It may be one of the following values:
 
-- `success`
-- `failure`
-- `neutral`
-- `action_required`
-- `skipped`
-- `stale`
-- `cancelled`
-- `timed_out`
-- `not_found`
+    - `success`
+    - `failure`
+    - `neutral`
+    - `action_required`
+    - `skipped`
+    - `stale`
+    - `cancelled`
+    - `timed_out`
+    - `not_found`
 
 
-These correspond to the `conclusion` state of the Check you're waiting on (see [Documentation](https://docs.github.com/en/rest/checks/runs?apiVersion=2022-11-28#update-a-check-run)).
-In addition, this action will emit a conclusion of `timed_out` if the Check specified didn't complete within `timeoutSeconds`, or `not_found` if no check was found within the warmup period.
+    These correspond to the `conclusion` state of the Check you're waiting on (see [Documentation](https://docs.github.com/en/rest/checks/runs?apiVersion=2022-11-28#update-a-check-run)).
+    In addition, this action will emit a conclusion of `timed_out` if the Check specified didn't complete within `timeoutSeconds`, or `not_found` if no check was found within the warmup period.
+- `was_running`
+    A boolean value, that indicates whether the check was found to be running. If false, a reported conclusion, e.g. `failure` means that the failure had already happened before this action was called.

@@ -20,7 +20,8 @@ async function run(): Promise<void> {
       warmupSeconds: parseInt(core.getInput('warmupSeconds') || '10')
     })
 
-    core.setOutput('conclusion', result)
+    core.setOutput('conclusion', result.conclusion)
+    core.setOutput('foundRunning', result.foundRunning)
   } catch (error) {
     core.setFailed(error instanceof Error ? error : JSON.stringify(error))
   }
