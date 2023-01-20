@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: build and test
-        run: |
-          npm ci --legacy-peer-deps  # TODO: remove flag
-          npm run all
+      - name: npm install
+        run: npm ci
+      
+      - run: npm run all
 
   integration-test: # make sure the action works on a clean machine without building
     runs-on: ubuntu-latest
@@ -39,7 +39,7 @@ jobs:
         run: mv dist/index.js dist/index.current.js
 
       - name: npm install
-        run: npm ci --legacy-peer-deps  # TODO: remove flag
+        run: npm ci
 
       - name: pack
         run: npm run build && npm run pack
