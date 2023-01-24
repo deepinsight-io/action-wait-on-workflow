@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import {context, getOctokit} from '@actions/github'
-import {poll} from './poll'
+import {poll} from './poll.check'
 
 async function run(): Promise<void> {
   try {

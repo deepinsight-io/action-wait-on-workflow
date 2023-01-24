@@ -1,4 +1,4 @@
-import {poll} from '../src/poll'
+import {poll} from '../src/poll.check'
 
 const client = {
   rest: {

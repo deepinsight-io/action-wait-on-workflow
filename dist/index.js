@@ -41,13 +41,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
 const github_1 = __nccwpck_require__(5438);
-const poll_1 = __nccwpck_require__(5498);
+const poll_check_1 = __nccwpck_require__(9451);
 function run() {
     var _a;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const token = core.getInput('token', { required: true });
-            const result = yield (0, poll_1.poll)({
+            const result = yield (0, poll_check_1.poll)({
                 client: (0, github_1.getOctokit)(token),
                 log: msg => core.info(msg),
                 checkName: core.getInput('checkName', { required: true }),
@@ -70,7 +70,7 @@ run();
 
 /***/ }),
 
-/***/ 5498:
+/***/ 9451:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
