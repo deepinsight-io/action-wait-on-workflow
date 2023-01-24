@@ -221,7 +221,11 @@ class WorkflowPoller {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     func(options, start, now) {
         return __awaiter(this, void 0, void 0, function* () {
-            throw new Error('Not implemented');
+            const workflow = yield this.getLatestWorkflowRunId(options);
+            if (workflow === undefined) {
+                return undefined;
+            }
+            return workflow.conclusion;
         });
     }
     onTimedout(options) {
@@ -261,7 +265,7 @@ class WorkflowPoller {
             log(`${workflowRuns.length} workflow runs with name '${workflowName}' have been found`);
             const latestWorkflowRun = (0, utils_1.maxBy)(workflowRuns, run => (run.run_attempt === undefined ? -1 : run.run_attempt));
             log(`The highest run_attempt is ${latestWorkflowRun.run_attempt}, id=${latestWorkflowRun.id}`);
-            return latestWorkflowRun.id;
+            return latestWorkflowRun;
         });
     }
 }

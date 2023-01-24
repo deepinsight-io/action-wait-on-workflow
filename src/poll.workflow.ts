@@ -7,8 +7,12 @@ type WorkflowRun = components['schemas']['workflow-run']
 
 class WorkflowPoller implements Poller<Options> {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async func(options: Options, start: number, now: number): Promise<string | undefined> {
-    throw new Error('Not implemented')
+  public async func(options: Options, start: number, now: number): Promise<string | null | undefined> {
+    const workflow = await this.getLatestWorkflowRunId(options)
+    if (workflow === undefined) {
+      return undefined
+    }
+    return workflow.conclusion
   }
   public onTimedout(options: Options): string {
     const {log, timeoutSeconds} = options
@@ -27,7 +31,7 @@ class WorkflowPoller implements Poller<Options> {
     return response.data.workflow_runs
   }
 
-  private async getLatestWorkflowRunId(options: Options): Promise<number | undefined> {
+  private async getLatestWorkflowRunId(options: Options): Promise<WorkflowRun | undefined> {
     const {log, workflowName, ref} = options
     const allWorkflowRuns = await this.getWorkflowRuns(options)
     if (allWorkflowRuns.length === 0) {
@@ -46,7 +50,7 @@ class WorkflowPoller implements Poller<Options> {
     log(`${workflowRuns.length} workflow runs with name '${workflowName}' have been found`)
     const latestWorkflowRun = maxBy(workflowRuns, run => (run.run_attempt === undefined ? -1 : run.run_attempt))
     log(`The highest run_attempt is ${latestWorkflowRun.run_attempt}, id=${latestWorkflowRun.id}`)
-    return latestWorkflowRun.id
+    return latestWorkflowRun
   }
 }
 
