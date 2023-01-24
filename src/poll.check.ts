@@ -5,7 +5,7 @@ import {poll, Poller} from './poll'
 type CheckRun = components['schemas']['check-run']
 
 class CheckPoller implements Poller<Options> {
-  constructor(private foundRun: boolean = false) {}
+  constructor(private previouslyFoundRun: boolean = false) {}
 
   public async func(options: Options, start: number, now: number): Promise<string | undefined> {
     const {client, log, checkName, intervalSeconds, warmupSeconds, owner, repo, ref} = options
@@ -19,22 +19,22 @@ class CheckPoller implements Poller<Options> {
       repo,
       ref
     })
-
     log(`Retrieved ${result.data.check_runs.length} check runs named ${checkName}`)
 
-    this.foundRun = this.foundRun || result.data.check_runs.length !== 0
+    const lastStartedCheck = this.getLastStartedCheck(result.data.check_runs)
 
-    if (now >= warmupDeadline && !this.foundRun) {
+    if (lastStartedCheck !== undefined) {
+      this.previouslyFoundRun = true
+
+      if (lastStartedCheck.status === 'completed') {
+        log(`Found a completed check with id ${lastStartedCheck.id} and conclusion ${lastStartedCheck.conclusion}`)
+        // conclusion is only `null` if status is not `completed`.
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        return lastStartedCheck.conclusion!
+      }
+    } else if (now >= warmupDeadline) {
       log(`No checks found after ${warmupSeconds} seconds, exiting with conclusion 'not_found'`)
       return 'not_found'
-    }
-
-    const lastStartedCheck = this.getLastStartedCheck(result.data.check_runs)
-    if (lastStartedCheck !== undefined && lastStartedCheck.status === 'completed') {
-      log(`Found a completed check with id ${lastStartedCheck.id} and conclusion ${lastStartedCheck.conclusion}`)
-      // conclusion is only `null` if status is not `completed`.
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return lastStartedCheck.conclusion!
     }
 
     log(`No completed checks named ${checkName}, waiting for ${intervalSeconds} seconds...`)

@@ -101,8 +101,8 @@ exports.pollChecks = void 0;
 const utils_1 = __nccwpck_require__(918);
 const poll_1 = __nccwpck_require__(5498);
 class CheckPoller {
-    constructor(foundRun = false) {
-        this.foundRun = foundRun;
+    constructor(previouslyFoundRun = false) {
+        this.previouslyFoundRun = previouslyFoundRun;
     }
     func(options, start, now) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -116,17 +116,19 @@ class CheckPoller {
                 ref
             });
             log(`Retrieved ${result.data.check_runs.length} check runs named ${checkName}`);
-            this.foundRun = this.foundRun || result.data.check_runs.length !== 0;
-            if (now >= warmupDeadline && !this.foundRun) {
+            const lastStartedCheck = this.getLastStartedCheck(result.data.check_runs);
+            if (lastStartedCheck !== undefined) {
+                this.previouslyFoundRun = true;
+                if (lastStartedCheck.status === 'completed') {
+                    log(`Found a completed check with id ${lastStartedCheck.id} and conclusion ${lastStartedCheck.conclusion}`);
+                    // conclusion is only `null` if status is not `completed`.
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    return lastStartedCheck.conclusion;
+                }
+            }
+            else if (now >= warmupDeadline) {
                 log(`No checks found after ${warmupSeconds} seconds, exiting with conclusion 'not_found'`);
                 return 'not_found';
-            }
-            const lastStartedCheck = this.getLastStartedCheck(result.data.check_runs);
-            if (lastStartedCheck !== undefined && lastStartedCheck.status === 'completed') {
-                log(`Found a completed check with id ${lastStartedCheck.id} and conclusion ${lastStartedCheck.conclusion}`);
-                // conclusion is only `null` if status is not `completed`.
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                return lastStartedCheck.conclusion;
             }
             log(`No completed checks named ${checkName}, waiting for ${intervalSeconds} seconds...`);
             return undefined;
