@@ -216,46 +216,50 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.poll = void 0;
 const utils_1 = __nccwpck_require__(918);
-function getWorkflowRuns(options) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const { client, log, owner, repo, ref: head_sha } = options;
-        log(`Getting workflow runs`);
-        const response = yield client.request('GET /repos/{owner}/{repo}/actions/runs', {
-            owner,
-            repo,
-            head_sha
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+class WorkflowPoller {
+    getWorkflowRuns(options) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { client, log, owner, repo, ref: head_sha } = options;
+            log(`Getting workflow runs`);
+            const response = yield client.request('GET /repos/{owner}/{repo}/actions/runs', {
+                owner,
+                repo,
+                head_sha
+            });
+            log(`Received ${response.data.total_count} runs`);
+            return response.data.workflow_runs;
         });
-        log(`Received ${response.data.total_count} runs`);
-        return response.data.workflow_runs;
-    });
-}
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function getLatestWorkflowRunId(options) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const { log, workflowName, ref } = options;
-        const allWorkflowRuns = yield getWorkflowRuns(options);
-        if (allWorkflowRuns.length === 0) {
-            log(`No workflow runs found for ${ref}`);
-            return undefined;
-        }
-        const workflowRuns = allWorkflowRuns.filter(run => run.name === workflowName);
-        if (workflowRuns.length === 0) {
-            log(`No workflow run name '${workflowName}' found for ${ref}. Names that exist are:`);
-            for (const runName of [...new Set(allWorkflowRuns.map(run => run.name))].sort(undefined)) {
-                log(`- ${runName}`);
+    }
+    getLatestWorkflowRunId(options) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { log, workflowName, ref } = options;
+            const allWorkflowRuns = yield this.getWorkflowRuns(options);
+            if (allWorkflowRuns.length === 0) {
+                log(`No workflow runs found for ${ref}`);
+                return undefined;
             }
-            return undefined;
-        }
-        log(`${workflowRuns.length} workflow runs with name '${workflowName}' have been found`);
-        const latestWorkflowRun = (0, utils_1.maxBy)(workflowRuns, run => (run.run_attempt === undefined ? -1 : run.run_attempt));
-        log(`The highest run_attempt is ${latestWorkflowRun.run_attempt}, id=${latestWorkflowRun.id}`);
-        return latestWorkflowRun.id;
-    });
+            const workflowRuns = allWorkflowRuns.filter(run => run.name === workflowName);
+            if (workflowRuns.length === 0) {
+                log(`No workflow run name '${workflowName}' found for ${ref}. Names that exist are:`);
+                for (const runName of [...new Set(allWorkflowRuns.map(run => run.name))].sort(undefined)) {
+                    log(`- ${runName}`);
+                }
+                return undefined;
+            }
+            log(`${workflowRuns.length} workflow runs with name '${workflowName}' have been found`);
+            const latestWorkflowRun = (0, utils_1.maxBy)(workflowRuns, run => (run.run_attempt === undefined ? -1 : run.run_attempt));
+            log(`The highest run_attempt is ${latestWorkflowRun.run_attempt}, id=${latestWorkflowRun.id}`);
+            return latestWorkflowRun.id;
+        });
+    }
 }
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const poll = (options) => __awaiter(void 0, void 0, void 0, function* () {
-    throw new Error('Not implemented');
-});
+function poll(options) {
+    return __awaiter(this, void 0, void 0, function* () {
+        throw new Error('Not implemented');
+    });
+}
 exports.poll = poll;
 
 
