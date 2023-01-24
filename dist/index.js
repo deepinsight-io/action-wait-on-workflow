@@ -101,13 +101,9 @@ exports.pollChecks = void 0;
 const utils_1 = __nccwpck_require__(918);
 const poll_1 = __nccwpck_require__(5498);
 class CheckPoller {
-    constructor(previouslyFoundRun = false) {
-        this.previouslyFoundRun = previouslyFoundRun;
-    }
-    func(options, start, now) {
+    func(options) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { client, log, checkName, intervalSeconds, warmupSeconds, owner, repo, ref } = options;
-            const warmupDeadline = start + warmupSeconds * 1000;
+            const { client, log, checkName, intervalSeconds, owner, repo, ref } = options;
             log(`Retrieving check runs named ${checkName} on ${owner}/${repo}@${ref}...`);
             const result = yield client.rest.checks.listForRef({
                 check_name: checkName,
@@ -117,27 +113,26 @@ class CheckPoller {
             });
             log(`Retrieved ${result.data.check_runs.length} check runs named ${checkName}`);
             const lastStartedCheck = this.getLastStartedCheck(result.data.check_runs);
-            if (lastStartedCheck !== undefined) {
-                this.previouslyFoundRun = true;
-                if (lastStartedCheck.status === 'completed') {
-                    log(`Found a completed check with id ${lastStartedCheck.id} and conclusion ${lastStartedCheck.conclusion}`);
-                    // conclusion is only `null` if status is not `completed`.
-                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                    return lastStartedCheck.conclusion;
-                }
-            }
-            else if (now >= warmupDeadline) {
-                log(`No checks found after ${warmupSeconds} seconds, exiting with conclusion 'not_found'`);
-                return 'not_found';
+            if (lastStartedCheck !== undefined && lastStartedCheck.status === 'completed') {
+                log(`Found a completed check with id ${lastStartedCheck.id} and conclusion ${lastStartedCheck.conclusion}`);
+                // conclusion is only `null` if status is not `completed`.
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                return lastStartedCheck.conclusion;
             }
             log(`No completed checks named ${checkName}, waiting for ${intervalSeconds} seconds...`);
-            return undefined;
+            return lastStartedCheck === undefined ? undefined : null;
         });
     }
-    onTimedout(options) {
-        const { log, timeoutSeconds } = options;
-        log(`No completed checks after ${timeoutSeconds} seconds, exiting with conclusion 'timed_out'`);
-        return 'timed_out';
+    onTimedout(options, warmupDeadlined) {
+        const { log, timeoutSeconds, warmupSeconds } = options;
+        if (warmupDeadlined) {
+            log(`No checks found after ${warmupSeconds} seconds, exiting with conclusion 'not_found'`);
+            return 'not_found';
+        }
+        else {
+            log(`No completed checks after ${timeoutSeconds} seconds, exiting with conclusion 'timed_out'`);
+            return 'timed_out';
+        }
     }
     getLastStartedCheck(checks) {
         if (checks.length === 0)
@@ -178,19 +173,25 @@ exports.poll = void 0;
 const wait_1 = __nccwpck_require__(5817);
 function poll(options, poller) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { timeoutSeconds, intervalSeconds } = options;
+        const { timeoutSeconds, intervalSeconds, warmupSeconds } = options;
         const start = new Date().getTime();
         const deadline = start + timeoutSeconds * 1000;
+        const warmupDeadline = start + warmupSeconds * 1000;
         let now = start;
+        let previouslyFound = false;
         while (now <= deadline) {
             const result = yield poller.func(options, start, now);
-            if (result !== undefined) {
+            if (result !== undefined && result !== null) {
                 return result;
+            }
+            previouslyFound = previouslyFound || result === null;
+            if (!previouslyFound && now >= warmupDeadline) {
+                return poller.onTimedout(options, true);
             }
             yield (0, wait_1.wait)(intervalSeconds * 1000);
             now = new Date().getTime();
         }
-        return poller.onTimedout(options);
+        return poller.onTimedout(options, false);
     });
 }
 exports.poll = poll;

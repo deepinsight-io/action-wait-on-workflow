@@ -2,30 +2,39 @@ import {wait} from './wait'
 import {SharedOptions} from './options'
 
 export interface Poller<TOptions> {
-  func: (options: TOptions, start: number, now: number) => Promise<string | undefined>
-  onTimedout: (options: TOptions) => string
+  /*
+  @returns: undefined if nothing has been found, null if something has been found but it doesn't meet the criteria.
+            otherwise a string with the result
+  */
+  func: (options: TOptions, start: number, now: number) => Promise<string | undefined | null>
+  onTimedout: (options: TOptions, warmupDeadlined: boolean) => string
 }
 
-export async function poll<TOptions extends Pick<SharedOptions, 'timeoutSeconds' | 'intervalSeconds'>>(
-  options: TOptions,
-  poller: Poller<TOptions>
-): Promise<string> {
-  const {timeoutSeconds, intervalSeconds} = options
+export async function poll<
+  TOptions extends Pick<SharedOptions, 'timeoutSeconds' | 'intervalSeconds' | 'warmupSeconds'>
+>(options: TOptions, poller: Poller<TOptions>): Promise<string> {
+  const {timeoutSeconds, intervalSeconds, warmupSeconds} = options
 
   const start = new Date().getTime()
   const deadline = start + timeoutSeconds * 1000
+  const warmupDeadline = start + warmupSeconds * 1000
   let now = start
+  let previouslyFound = false
 
   while (now <= deadline) {
     const result = await poller.func(options, start, now)
-    if (result !== undefined) {
+    if (result !== undefined && result !== null) {
       return result
     }
 
-    await wait(intervalSeconds * 1000)
+    previouslyFound = previouslyFound || result === null
+    if (!previouslyFound && now >= warmupDeadline) {
+      return poller.onTimedout(options, true)
+    }
 
+    await wait(intervalSeconds * 1000)
     now = new Date().getTime()
   }
 
-  return poller.onTimedout(options)
+  return poller.onTimedout(options, false)
 }

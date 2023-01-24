@@ -5,12 +5,8 @@ import {poll, Poller} from './poll'
 type CheckRun = components['schemas']['check-run']
 
 class CheckPoller implements Poller<Options> {
-  constructor(private previouslyFoundRun: boolean = false) {}
-
-  public async func(options: Options, start: number, now: number): Promise<string | undefined> {
-    const {client, log, checkName, intervalSeconds, warmupSeconds, owner, repo, ref} = options
-
-    const warmupDeadline = start + warmupSeconds * 1000
+  public async func(options: Options): Promise<string | undefined | null> {
+    const {client, log, checkName, intervalSeconds, owner, repo, ref} = options
 
     log(`Retrieving check runs named ${checkName} on ${owner}/${repo}@${ref}...`)
     const result = await client.rest.checks.listForRef({
@@ -22,28 +18,25 @@ class CheckPoller implements Poller<Options> {
     log(`Retrieved ${result.data.check_runs.length} check runs named ${checkName}`)
 
     const lastStartedCheck = this.getLastStartedCheck(result.data.check_runs)
-
-    if (lastStartedCheck !== undefined) {
-      this.previouslyFoundRun = true
-
-      if (lastStartedCheck.status === 'completed') {
-        log(`Found a completed check with id ${lastStartedCheck.id} and conclusion ${lastStartedCheck.conclusion}`)
-        // conclusion is only `null` if status is not `completed`.
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return lastStartedCheck.conclusion!
-      }
-    } else if (now >= warmupDeadline) {
-      log(`No checks found after ${warmupSeconds} seconds, exiting with conclusion 'not_found'`)
-      return 'not_found'
+    if (lastStartedCheck !== undefined && lastStartedCheck.status === 'completed') {
+      log(`Found a completed check with id ${lastStartedCheck.id} and conclusion ${lastStartedCheck.conclusion}`)
+      // conclusion is only `null` if status is not `completed`.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      return lastStartedCheck.conclusion!
     }
 
     log(`No completed checks named ${checkName}, waiting for ${intervalSeconds} seconds...`)
-    return undefined
+    return lastStartedCheck === undefined ? undefined : null
   }
-  public onTimedout(options: Options): string {
-    const {log, timeoutSeconds} = options
-    log(`No completed checks after ${timeoutSeconds} seconds, exiting with conclusion 'timed_out'`)
-    return 'timed_out'
+  public onTimedout(options: Options, warmupDeadlined: boolean): string {
+    const {log, timeoutSeconds, warmupSeconds} = options
+    if (warmupDeadlined) {
+      log(`No checks found after ${warmupSeconds} seconds, exiting with conclusion 'not_found'`)
+      return 'not_found'
+    } else {
+      log(`No completed checks after ${timeoutSeconds} seconds, exiting with conclusion 'timed_out'`)
+      return 'timed_out'
+    }
   }
 
   private getLastStartedCheck(checks: CheckRun[]): CheckRun | undefined {
