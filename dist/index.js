@@ -64,7 +64,7 @@ function run() {
                 return;
             }
             if (checkName !== undefined) {
-                const result = yield (0, poll_check_1.poll)(Object.assign(Object.assign({}, inputs), { checkName }));
+                const result = yield (0, poll_check_1.pollChecks)(Object.assign(Object.assign({}, inputs), { checkName }));
                 core.setOutput('conclusion', result);
             }
             else {
@@ -97,53 +97,101 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.poll = void 0;
-const wait_1 = __nccwpck_require__(5817);
+exports.pollChecks = void 0;
 const utils_1 = __nccwpck_require__(918);
-const poll = (options) => __awaiter(void 0, void 0, void 0, function* () {
-    const { client, log, checkName, timeoutSeconds, intervalSeconds, warmupSeconds, owner, repo, ref } = options;
-    let now = new Date().getTime();
-    const deadline = now + timeoutSeconds * 1000;
-    const warmupDeadline = now + warmupSeconds * 1000;
-    let foundRun = false;
-    while (now <= deadline) {
-        log(`Retrieving check runs named ${checkName} on ${owner}/${repo}@${ref}...`);
-        const result = yield client.rest.checks.listForRef({
-            check_name: checkName,
-            owner,
-            repo,
-            ref
-        });
-        log(`Retrieved ${result.data.check_runs.length} check runs named ${checkName}`);
-        foundRun = foundRun || result.data.check_runs.length !== 0;
-        if (now >= warmupDeadline && !foundRun) {
-            log(`No checks found after ${warmupSeconds} seconds, exiting with conclusion 'not_found'`);
-            return 'not_found';
-        }
-        const lastStartedCheck = getLastStartedCheck(result.data.check_runs);
-        if (lastStartedCheck !== undefined && lastStartedCheck.status === 'completed') {
-            log(`Found a completed check with id ${lastStartedCheck.id} and conclusion ${lastStartedCheck.conclusion}`);
-            // conclusion is only `null` if status is not `completed`.
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            return lastStartedCheck.conclusion;
-        }
-        log(`No completed checks named ${checkName}, waiting for ${intervalSeconds} seconds...`);
-        yield (0, wait_1.wait)(intervalSeconds * 1000);
-        now = new Date().getTime();
+const poll_1 = __nccwpck_require__(5498);
+class CheckPoller {
+    constructor(foundRun = false) {
+        this.foundRun = foundRun;
     }
-    log(`No completed checks after ${timeoutSeconds} seconds, exiting with conclusion 'timed_out'`);
-    return 'timed_out';
-});
-exports.poll = poll;
-function getLastStartedCheck(checks) {
-    if (checks.length === 0)
-        return undefined;
-    return (0, utils_1.maxBy)(checks, c => {
-        if (c.started_at === null)
-            throw new Error('c.started_at === null');
-        return Date.parse(c.started_at);
+    func(options, start, now) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { client, log, checkName, intervalSeconds, warmupSeconds, owner, repo, ref } = options;
+            const warmupDeadline = start + warmupSeconds * 1000;
+            log(`Retrieving check runs named ${checkName} on ${owner}/${repo}@${ref}...`);
+            const result = yield client.rest.checks.listForRef({
+                check_name: checkName,
+                owner,
+                repo,
+                ref
+            });
+            log(`Retrieved ${result.data.check_runs.length} check runs named ${checkName}`);
+            this.foundRun = this.foundRun || result.data.check_runs.length !== 0;
+            if (now >= warmupDeadline && !this.foundRun) {
+                log(`No checks found after ${warmupSeconds} seconds, exiting with conclusion 'not_found'`);
+                return 'not_found';
+            }
+            const lastStartedCheck = this.getLastStartedCheck(result.data.check_runs);
+            if (lastStartedCheck !== undefined && lastStartedCheck.status === 'completed') {
+                log(`Found a completed check with id ${lastStartedCheck.id} and conclusion ${lastStartedCheck.conclusion}`);
+                // conclusion is only `null` if status is not `completed`.
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                return lastStartedCheck.conclusion;
+            }
+            log(`No completed checks named ${checkName}, waiting for ${intervalSeconds} seconds...`);
+            return undefined;
+        });
+    }
+    onTimedout(options) {
+        const { log, timeoutSeconds } = options;
+        log(`No completed checks after ${timeoutSeconds} seconds, exiting with conclusion 'timed_out'`);
+        return 'timed_out';
+    }
+    getLastStartedCheck(checks) {
+        if (checks.length === 0)
+            return undefined;
+        return (0, utils_1.maxBy)(checks, c => {
+            if (c.started_at === null)
+                throw new Error('c.started_at === null');
+            return Date.parse(c.started_at);
+        });
+    }
+}
+function pollChecks(options) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return yield (0, poll_1.poll)(options, new CheckPoller());
     });
 }
+exports.pollChecks = pollChecks;
+
+
+/***/ }),
+
+/***/ 5498:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.poll = void 0;
+const wait_1 = __nccwpck_require__(5817);
+function poll(options, poller) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const { timeoutSeconds, intervalSeconds } = options;
+        const start = new Date().getTime();
+        const deadline = start + timeoutSeconds * 1000;
+        let now = start;
+        while (now <= deadline) {
+            const result = yield poller.func(options, start, now);
+            if (result !== undefined) {
+                return result;
+            }
+            yield (0, wait_1.wait)(intervalSeconds * 1000);
+            now = new Date().getTime();
+        }
+        return poller.onTimedout(options);
+    });
+}
+exports.poll = poll;
 
 
 /***/ }),
