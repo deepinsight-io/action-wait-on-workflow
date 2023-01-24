@@ -15,3 +15,7 @@ export interface SharedOptions {
 export interface CheckOptions extends SharedOptions {
   checkName: string
 }
+
+export interface WorkflowOptions extends SharedOptions {
+  workflowName: string
+}

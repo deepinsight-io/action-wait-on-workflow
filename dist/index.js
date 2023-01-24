@@ -42,23 +42,35 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
 const github_1 = __nccwpck_require__(5438);
 const poll_check_1 = __nccwpck_require__(9451);
+const poll_workflow_1 = __nccwpck_require__(7252);
 function run() {
     var _a;
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const token = core.getInput('token', { required: true });
-            const result = yield (0, poll_check_1.poll)({
-                client: (0, github_1.getOctokit)(token),
-                log: msg => core.info(msg),
-                checkName: core.getInput('checkName', { required: true }),
+            const inputs = {
+                client: (0, github_1.getOctokit)(core.getInput('token', { required: true })),
                 owner: core.getInput('owner') || github_1.context.repo.owner,
                 repo: core.getInput('repo') || github_1.context.repo.repo,
                 ref: core.getInput('ref') || ((_a = github_1.context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.head.sha) || github_1.context.sha,
                 timeoutSeconds: parseInt(core.getInput('timeoutSeconds') || '600'),
                 intervalSeconds: parseInt(core.getInput('intervalSeconds') || '10'),
-                warmupSeconds: parseInt(core.getInput('warmupSeconds') || '10')
-            });
-            core.setOutput('conclusion', result);
+                warmupSeconds: parseInt(core.getInput('warmupSeconds') || '10'),
+                log: msg => core.info(msg)
+            };
+            const checkName = core.getInput('checkName');
+            const workflowName = core.getInput('workflowName');
+            if (checkName === undefined && workflowName === undefined) {
+                core.setFailed("Either 'checkName' or 'workflowName' must be provided");
+                return;
+            }
+            if (checkName !== undefined) {
+                const result = yield (0, poll_check_1.poll)(Object.assign(Object.assign({}, inputs), { checkName }));
+                core.setOutput('conclusion', result);
+            }
+            else {
+                const result = yield (0, poll_workflow_1.poll)(Object.assign(Object.assign({}, inputs), { workflowName }));
+                core.setOutput('conclusion', result);
+            }
         }
         catch (error) {
             core.setFailed(error instanceof Error ? error : JSON.stringify(error));
@@ -132,6 +144,68 @@ function getLastStartedCheck(checks) {
         return Date.parse(c.started_at);
     });
 }
+
+
+/***/ }),
+
+/***/ 7252:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.poll = void 0;
+const utils_1 = __nccwpck_require__(918);
+function getWorkflowRuns(options) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const { client, log, owner, repo, ref: head_sha } = options;
+        log(`Getting workflow runs`);
+        const response = yield client.request('GET /repos/{owner}/{repo}/actions/runs', {
+            owner,
+            repo,
+            head_sha
+        });
+        log(`Received ${response.data.total_count} runs`);
+        return response.data.workflow_runs;
+    });
+}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function getLatestWorkflowRunId(options) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const { log, workflowName, ref } = options;
+        const allWorkflowRuns = yield getWorkflowRuns(options);
+        if (allWorkflowRuns.length === 0) {
+            log(`No workflow runs found for ${ref}`);
+            return undefined;
+        }
+        const workflowRuns = allWorkflowRuns.filter(run => run.name === workflowName);
+        if (workflowRuns.length === 0) {
+            log(`No workflow run name '${workflowName}' found for ${ref}. Names that exist are:`);
+            for (const runName of [...new Set(allWorkflowRuns.map(run => run.name))].sort(undefined)) {
+                log(`- ${runName}`);
+            }
+            return undefined;
+        }
+        log(`${workflowRuns.length} workflow runs with name '${workflowName}' have been found`);
+        const latestWorkflowRun = (0, utils_1.maxBy)(workflowRuns, run => (run.run_attempt === undefined ? -1 : run.run_attempt));
+        log(`The highest run_attempt is ${latestWorkflowRun.run_attempt}, id=${latestWorkflowRun.id}`);
+        return latestWorkflowRun.id;
+    });
+}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const poll = (options) => __awaiter(void 0, void 0, void 0, function* () {
+    throw new Error('Not implemented');
+});
+exports.poll = poll;
 
 
 /***/ }),
