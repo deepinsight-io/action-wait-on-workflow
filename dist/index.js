@@ -224,9 +224,10 @@ class WorkflowPoller {
             throw new Error('Not implemented');
         });
     }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onTimedout(options) {
-        throw new Error('Not implemented');
+        const { log, timeoutSeconds } = options;
+        log(`No completed workflows after ${timeoutSeconds} seconds, exiting with conclusion 'timed_out'`);
+        return 'timed_out';
     }
     getWorkflowRuns(options) {
         return __awaiter(this, void 0, void 0, function* () {

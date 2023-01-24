@@ -10,9 +10,10 @@ class WorkflowPoller implements Poller<Options> {
   public async func(options: Options, start: number, now: number): Promise<string | undefined> {
     throw new Error('Not implemented')
   }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public onTimedout(options: Options): string {
-    throw new Error('Not implemented')
+    const {log, timeoutSeconds} = options
+    log(`No completed workflows after ${timeoutSeconds} seconds, exiting with conclusion 'timed_out'`)
+    return 'timed_out'
   }
   private async getWorkflowRuns(options: Options): Promise<WorkflowRun[]> {
     const {client, log, owner, repo, ref: head_sha} = options
