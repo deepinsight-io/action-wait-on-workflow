@@ -2,7 +2,7 @@ import * as core from '@actions/core'
 import {context, getOctokit} from '@actions/github'
 import {SharedOptions} from './options'
 import {pollChecks} from './poll.check'
-import {poll as pollWorkflows} from './poll.workflow'
+import {pollWorkflows} from './poll.workflow'
 
 async function run(): Promise<void> {
   try {

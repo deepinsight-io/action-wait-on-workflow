@@ -1,11 +1,19 @@
 import type {components} from '@octokit/openapi-types'
 import {WorkflowOptions as Options} from './options'
 import {maxBy} from './utils'
+import {poll, Poller} from './poll'
 
 type WorkflowRun = components['schemas']['workflow-run']
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-class WorkflowPoller {
+class WorkflowPoller implements Poller<Options> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async func(options: Options, start: number, now: number): Promise<string | undefined> {
+    throw new Error('Not implemented')
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public onTimedout(options: Options): string {
+    throw new Error('Not implemented')
+  }
   private async getWorkflowRuns(options: Options): Promise<WorkflowRun[]> {
     const {client, log, owner, repo, ref: head_sha} = options
     log(`Getting workflow runs`)
@@ -41,7 +49,7 @@ class WorkflowPoller {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function poll(options: Options): Promise<'success' | 'already_running' | 'not_found'> {
-  throw new Error('Not implemented')
+export async function pollWorkflows(options: Options): Promise<string> {
+  // returns 'success' | 'already_running' | 'not_found'
+  return poll(options, new WorkflowPoller())
 }

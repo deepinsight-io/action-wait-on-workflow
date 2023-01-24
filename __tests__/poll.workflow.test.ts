@@ -1,4 +1,4 @@
-import {poll} from '../src/poll.workflow'
+import {pollWorkflows as poll} from '../src/poll.workflow'
 import type {components} from '@octokit/openapi-types'
 import {WorkflowOptions} from '../src/options'
 type WorkflowRun = components['schemas']['workflow-run'] & {

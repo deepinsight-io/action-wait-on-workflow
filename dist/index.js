@@ -68,7 +68,7 @@ function run() {
                 core.setOutput('conclusion', result);
             }
             else {
-                const result = yield (0, poll_workflow_1.poll)(Object.assign(Object.assign({}, inputs), { workflowName }));
+                const result = yield (0, poll_workflow_1.pollWorkflows)(Object.assign(Object.assign({}, inputs), { workflowName }));
                 core.setOutput('conclusion', result);
             }
         }
@@ -214,10 +214,20 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.poll = void 0;
+exports.pollWorkflows = void 0;
 const utils_1 = __nccwpck_require__(918);
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const poll_1 = __nccwpck_require__(5498);
 class WorkflowPoller {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    func(options, start, now) {
+        return __awaiter(this, void 0, void 0, function* () {
+            throw new Error('Not implemented');
+        });
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onTimedout(options) {
+        throw new Error('Not implemented');
+    }
     getWorkflowRuns(options) {
         return __awaiter(this, void 0, void 0, function* () {
             const { client, log, owner, repo, ref: head_sha } = options;
@@ -254,13 +264,13 @@ class WorkflowPoller {
         });
     }
 }
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function poll(options) {
+function pollWorkflows(options) {
     return __awaiter(this, void 0, void 0, function* () {
-        throw new Error('Not implemented');
+        // returns 'success' | 'already_running' | 'not_found'
+        return (0, poll_1.poll)(options, new WorkflowPoller());
     });
 }
-exports.poll = poll;
+exports.pollWorkflows = pollWorkflows;
 
 
 /***/ }),
