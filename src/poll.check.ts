@@ -1,21 +1,8 @@
-import {GitHub} from '@actions/github/lib/utils'
 import {wait} from './wait'
 import {maxBy} from './utils'
 import type {components} from '@octokit/openapi-types'
+import type {CheckOptions as Options} from './options'
 type CheckRun = components['schemas']['check-run']
-
-export interface Options {
-  client: InstanceType<typeof GitHub>
-  log: (message: string) => void
-
-  checkName: string
-  timeoutSeconds: number
-  intervalSeconds: number
-  warmupSeconds: number
-  owner: string
-  repo: string
-  ref: string
-}
 
 export const poll = async (options: Options): Promise<string> => {
   const {client, log, checkName, timeoutSeconds, intervalSeconds, warmupSeconds, owner, repo, ref} = options
