@@ -28,7 +28,7 @@ class CheckPoller implements Poller<Options> {
     log(`No completed checks named ${checkName}, waiting for ${intervalSeconds} seconds...`)
     return lastStartedCheck === undefined ? undefined : null
   }
-  public onTimedout(options: Options, warmupDeadlined: boolean): string {
+  public onTimedOut(options: Options, warmupDeadlined: boolean): string {
     const {log, timeoutSeconds, warmupSeconds} = options
     if (warmupDeadlined) {
       log(`No checks found after ${warmupSeconds} seconds, exiting with conclusion 'not_found'`)

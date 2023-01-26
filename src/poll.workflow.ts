@@ -14,7 +14,7 @@ class WorkflowPoller implements Poller<Options> {
     }
     return workflow.conclusion
   }
-  public onTimedout(options: Options): string {
+  public onTimedOut(options: Options): string {
     const {log, timeoutSeconds} = options
     log(`No completed workflows after ${timeoutSeconds} seconds, exiting with conclusion 'timed_out'`)
     return 'timed_out'

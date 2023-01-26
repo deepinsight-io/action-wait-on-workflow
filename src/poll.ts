@@ -7,7 +7,7 @@ export interface Poller<TOptions> {
             otherwise a string with the result
   */
   func: (options: TOptions, start: number, now: number) => Promise<string | undefined | null>
-  onTimedout: (options: TOptions, warmupDeadlined: boolean) => string
+  onTimedOut: (options: TOptions, warmupDeadlined: boolean) => string
 }
 
 export async function poll<
@@ -29,12 +29,12 @@ export async function poll<
 
     previouslyFound = previouslyFound || result === null
     if (!previouslyFound && now >= warmupDeadline) {
-      return poller.onTimedout(options, true)
+      return poller.onTimedOut(options, true)
     }
 
     await wait(intervalSeconds * 1000)
     now = new Date().getTime()
   }
 
-  return poller.onTimedout(options, false)
+  return poller.onTimedOut(options, false)
 }
