@@ -55,7 +55,7 @@ function run() {
                 timeoutSeconds: parseInt(core.getInput('timeoutSeconds') || '600'),
                 intervalSeconds: parseInt(core.getInput('intervalSeconds') || '10'),
                 warmupSeconds: parseInt(core.getInput('warmupSeconds') || '10'),
-                log: msg => core.info(msg)
+                log: msg => core.info(msg),
             };
             const checkName = core.getInput('checkName');
             const workflowName = core.getInput('workflowName');
@@ -109,7 +109,7 @@ class CheckPoller {
                 check_name: checkName,
                 owner,
                 repo,
-                ref
+                ref,
             });
             log(`Retrieved ${result.data.check_runs.length} check runs named ${checkName}`);
             const lastStartedCheck = this.getLastStartedCheck(result.data.check_runs);
@@ -123,7 +123,7 @@ class CheckPoller {
             return lastStartedCheck === undefined ? undefined : null;
         });
     }
-    onTimedout(options, warmupDeadlined) {
+    onTimedOut(options, warmupDeadlined) {
         const { log, timeoutSeconds, warmupSeconds } = options;
         if (warmupDeadlined) {
             log(`No checks found after ${warmupSeconds} seconds, exiting with conclusion 'not_found'`);
@@ -186,12 +186,12 @@ function poll(options, poller) {
             }
             previouslyFound = previouslyFound || result === null;
             if (!previouslyFound && now >= warmupDeadline) {
-                return poller.onTimedout(options, true);
+                return poller.onTimedOut(options, true);
             }
             yield (0, wait_1.wait)(intervalSeconds * 1000);
             now = new Date().getTime();
         }
-        return poller.onTimedout(options, false);
+        return poller.onTimedOut(options, false);
     });
 }
 exports.poll = poll;
@@ -225,13 +225,8 @@ class WorkflowPoller {
             if (workflow === undefined) {
                 return undefined;
             }
-            return workflow.conclusion;
+            return workflow.conclusion || null;
         });
-    }
-    onTimedout(options) {
-        const { log, timeoutSeconds } = options;
-        log(`No completed workflows after ${timeoutSeconds} seconds, exiting with conclusion 'timed_out'`);
-        return 'timed_out';
     }
     getWorkflowRuns(options) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -240,7 +235,7 @@ class WorkflowPoller {
             const response = yield client.request('GET /repos/{owner}/{repo}/actions/runs', {
                 owner,
                 repo,
-                head_sha
+                head_sha,
             });
             log(`Received ${response.data.total_count} runs`);
             return response.data.workflow_runs;
@@ -267,6 +262,17 @@ class WorkflowPoller {
             log(`The highest run_attempt is ${latestWorkflowRun.run_attempt}, id=${latestWorkflowRun.id}`);
             return latestWorkflowRun;
         });
+    }
+    onTimedOut(options, warmupDeadlined) {
+        const { log, timeoutSeconds, warmupSeconds } = options;
+        if (warmupDeadlined) {
+            log(`No checks found after ${warmupSeconds} seconds, exiting with conclusion 'not_found'`);
+            return 'not_found';
+        }
+        else {
+            log(`No completed checks after ${timeoutSeconds} seconds, exiting with conclusion 'timed_out'`);
+            return 'timed_out';
+        }
     }
 }
 function pollWorkflows(options) {

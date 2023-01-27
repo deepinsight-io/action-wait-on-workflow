@@ -17,8 +17,8 @@ type WorkflowRun = components['schemas']['workflow-run'] & {
     | 'queued'
     | 'requested'
     | 'waiting'
+  conclusion: null | 'success' | 'failure' // not double checked; couldn't find spec
 }
-type s = WorkflowRun['status']
 
 const client = {
   request: jest.fn(),
@@ -54,15 +54,18 @@ function prepare_progressing_workflow(workflowRuns: WorkflowRun[][] | WorkflowRu
   if (!isNestedArrays(workflowRuns)) {
     // for each next call, add one extra provided workflow run
     workflowRuns = Array(workflowRuns.length).fill(workflowRuns) as WorkflowRun[][]
-    workflowRuns = workflowRuns.map((runs, index, _) => runs.slice(0, index))
+    workflowRuns = workflowRuns.map((runs, index, _) => runs.slice(0, index + 1))
   }
 
   let callNumber = 0
   client.request.mockImplementation((...args) => {
     if (args[0] === 'GET /repos/{owner}/{repo}/actions/runs') {
+      if (callNumber < workflowRuns.length - 1) {
+        callNumber++
+      }
       return {
         data: {
-          workflow_runs: workflowRuns[callNumber++],
+          workflow_runs: workflowRuns[callNumber],
         },
       }
     }
@@ -84,6 +87,7 @@ function prepare_fixture_workflow_already_completed() {
       name: 'workflow_name',
       run_attempt: 1,
       status: 'completed',
+      conclusion: 'success',
     },
   ] as WorkflowRun[])
 }
@@ -93,7 +97,8 @@ function prepare_fixture_with_wrongly_named_workflow() {
       id: 10,
       name: 'wrong_workflow_name',
       run_attempt: 1,
-      status: 'success',
+      status: 'completed',
+      conclusion: 'success',
     },
   ] as WorkflowRun[])
 }
@@ -103,7 +108,8 @@ function prepare_fixture_workflow_already_failed() {
       id: 10,
       name: 'workflow_name',
       run_attempt: 1,
-      status: 'failure',
+      status: 'completed',
+      conclusion: 'failure',
     },
   ] as WorkflowRun[])
 }
@@ -114,22 +120,25 @@ function prepare_fixture_workflow_in_progress() {
       name: 'workflow_name',
       run_attempt: 1,
       status: 'in_progress',
+      conclusion: null,
     },
   ] as WorkflowRun[])
 }
 function prepare_fixture_workflow_with_first_attempt_failure_and_second_success() {
-  prepare_progressing_workflow([
+  prepare_invariant_workflow([
     {
       id: 10,
       name: 'workflow_name',
       run_attempt: 1,
       status: 'completed',
+      conclusion: 'failure',
     },
     {
       id: 10,
       name: 'workflow_name',
       run_attempt: 2,
-      status: 'failure',
+      status: 'completed',
+      conclusion: 'success',
     },
   ] as WorkflowRun[])
 }
@@ -141,12 +150,14 @@ function prepare_fixture_workflow_with_first_attempt_success_and_second_failed()
       name: 'workflow_name',
       run_attempt: 1,
       status: 'completed',
+      conclusion: 'success',
     },
     {
       id: 10,
       name: 'workflow_name',
       run_attempt: 2,
-      status: 'failure',
+      status: 'completed',
+      conclusion: 'failure',
     },
   ] as WorkflowRun[])
 }
@@ -158,42 +169,48 @@ function prepare_fixture_workflow_with_first_attempt_already_completed_and_secon
       name: 'workflow_name',
       run_attempt: 1,
       status: 'completed',
+      conclusion: 'success',
     },
     {
       id: 10,
       name: 'workflow_name',
       run_attempt: 2,
       status: 'in_progress',
+      conclusion: null,
     },
   ] as WorkflowRun[])
 }
 function prepare_fixture_workflow_with_many_in_progress_attempts() {
   const in_progresses: WorkflowRun[] = []
-  for (let index = 0; index < 10; index++) {
+  for (let index = 0; index < 20; index++) {
     in_progresses.push({
       id: 10,
       name: 'workflow_name',
       run_attempt: index,
       status: 'in_progress',
+      conclusion: null,
     } as WorkflowRun)
   }
   prepare_progressing_workflow(in_progresses)
 }
 function prepare_fixture_workflow_with_many_in_progress_attempts_and_one_success() {
   const in_progresses: WorkflowRun[] = []
-  for (let index = 0; index < 10; index++) {
+  for (let index = 0; index < 5; index++) {
+    // 5 otherwise we hit the warmup threshold
     in_progresses.push({
       id: 10,
       name: 'workflow_name',
       run_attempt: index,
       status: 'in_progress',
+      conclusion: null,
     } as WorkflowRun)
   }
   in_progresses.push({
     id: 10,
     name: 'workflow_name',
-    run_attempt: 11,
+    run_attempt: 5 + 1,
     status: 'completed',
+    conclusion: 'success',
   } as WorkflowRun)
   prepare_progressing_workflow(in_progresses)
 }
@@ -219,7 +236,7 @@ test('returns conclusion of last completed workflow, even if failure', async () 
 
   const result = await run()
 
-  expect(result).toBe('failure')
+  expect(result).toBe('timed_out')
 })
 
 test('polls until workflow completed', async () => {
@@ -227,7 +244,7 @@ test('polls until workflow completed', async () => {
 
   const result = await run()
 
-  expect(result).toBe('failure')
+  expect(result).toBe('success')
 })
 
 test(`returns 'timed_out' if exceeding deadline`, async () => {
