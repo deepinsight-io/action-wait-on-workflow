@@ -25,7 +25,7 @@ class WorkflowPoller implements Poller<Options> {
     const response = await client.request('GET /repos/{owner}/{repo}/actions/runs', {
       owner,
       repo,
-      head_sha
+      head_sha,
     })
     log(`Received ${response.data.total_count} runs`)
     return response.data.workflow_runs

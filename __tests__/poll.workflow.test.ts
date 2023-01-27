@@ -21,7 +21,7 @@ type WorkflowRun = components['schemas']['workflow-run'] & {
 type s = WorkflowRun['status']
 
 const client = {
-  request: jest.fn()
+  request: jest.fn(),
 }
 
 function run({workflowName}: {workflowName: WorkflowOptions['workflowName']} = {workflowName: 'workflow_name'}) {
@@ -34,7 +34,7 @@ function run({workflowName}: {workflowName: WorkflowOptions['workflowName']} = {
     ref: 'abcd',
     timeoutSeconds: 3,
     intervalSeconds: 0.1,
-    warmupSeconds: 1
+    warmupSeconds: 1,
   })
 }
 
@@ -43,8 +43,8 @@ function prepare_invariant_workflow(workflowRuns: WorkflowRun[]) {
     if (args[0] === 'GET /repos/{owner}/{repo}/actions/runs') {
       return {
         data: {
-          workflow_runs: workflowRuns
-        }
+          workflow_runs: workflowRuns,
+        },
       }
     }
     throw new Error(`Unmocked call ${args.length === 0 ? '<>' : args[0]}`)
@@ -62,8 +62,8 @@ function prepare_progressing_workflow(workflowRuns: WorkflowRun[][] | WorkflowRu
     if (args[0] === 'GET /repos/{owner}/{repo}/actions/runs') {
       return {
         data: {
-          workflow_runs: workflowRuns[callNumber++]
-        }
+          workflow_runs: workflowRuns[callNumber++],
+        },
       }
     }
     throw new Error(`Unmocked call ${args.length === 0 ? '<>' : args[0]}`)
@@ -83,8 +83,8 @@ function prepare_fixture_workflow_already_completed() {
       id: 10,
       name: 'workflow_name',
       run_attempt: 1,
-      status: 'completed'
-    }
+      status: 'completed',
+    },
   ] as WorkflowRun[])
 }
 function prepare_fixture_with_wrongly_named_workflow() {
@@ -93,8 +93,8 @@ function prepare_fixture_with_wrongly_named_workflow() {
       id: 10,
       name: 'wrong_workflow_name',
       run_attempt: 1,
-      status: 'success'
-    }
+      status: 'success',
+    },
   ] as WorkflowRun[])
 }
 function prepare_fixture_workflow_already_failed() {
@@ -103,8 +103,8 @@ function prepare_fixture_workflow_already_failed() {
       id: 10,
       name: 'workflow_name',
       run_attempt: 1,
-      status: 'failure'
-    }
+      status: 'failure',
+    },
   ] as WorkflowRun[])
 }
 function prepare_fixture_workflow_in_progress() {
@@ -113,8 +113,8 @@ function prepare_fixture_workflow_in_progress() {
       id: 10,
       name: 'workflow_name',
       run_attempt: 1,
-      status: 'in_progress'
-    }
+      status: 'in_progress',
+    },
   ] as WorkflowRun[])
 }
 function prepare_fixture_workflow_with_first_attempt_failure_and_second_success() {
@@ -123,14 +123,14 @@ function prepare_fixture_workflow_with_first_attempt_failure_and_second_success(
       id: 10,
       name: 'workflow_name',
       run_attempt: 1,
-      status: 'completed'
+      status: 'completed',
     },
     {
       id: 10,
       name: 'workflow_name',
       run_attempt: 2,
-      status: 'failure'
-    }
+      status: 'failure',
+    },
   ] as WorkflowRun[])
 }
 
@@ -140,14 +140,14 @@ function prepare_fixture_workflow_with_first_attempt_success_and_second_failed()
       id: 10,
       name: 'workflow_name',
       run_attempt: 1,
-      status: 'completed'
+      status: 'completed',
     },
     {
       id: 10,
       name: 'workflow_name',
       run_attempt: 2,
-      status: 'failure'
-    }
+      status: 'failure',
+    },
   ] as WorkflowRun[])
 }
 
@@ -157,14 +157,14 @@ function prepare_fixture_workflow_with_first_attempt_already_completed_and_secon
       id: 10,
       name: 'workflow_name',
       run_attempt: 1,
-      status: 'completed'
+      status: 'completed',
     },
     {
       id: 10,
       name: 'workflow_name',
       run_attempt: 2,
-      status: 'in_progress'
-    }
+      status: 'in_progress',
+    },
   ] as WorkflowRun[])
 }
 function prepare_fixture_workflow_with_many_in_progress_attempts() {
@@ -174,7 +174,7 @@ function prepare_fixture_workflow_with_many_in_progress_attempts() {
       id: 10,
       name: 'workflow_name',
       run_attempt: index,
-      status: 'in_progress'
+      status: 'in_progress',
     } as WorkflowRun)
   }
   prepare_progressing_workflow(in_progresses)
@@ -186,14 +186,14 @@ function prepare_fixture_workflow_with_many_in_progress_attempts_and_one_success
       id: 10,
       name: 'workflow_name',
       run_attempt: index,
-      status: 'in_progress'
+      status: 'in_progress',
     } as WorkflowRun)
   }
   in_progresses.push({
     id: 10,
     name: 'workflow_name',
     run_attempt: 11,
-    status: 'completed'
+    status: 'completed',
   } as WorkflowRun)
   prepare_progressing_workflow(in_progresses)
 }

@@ -13,7 +13,7 @@ class CheckPoller implements Poller<Options> {
       check_name: checkName,
       owner,
       repo,
-      ref
+      ref,
     })
     log(`Retrieved ${result.data.check_runs.length} check runs named ${checkName}`)
 

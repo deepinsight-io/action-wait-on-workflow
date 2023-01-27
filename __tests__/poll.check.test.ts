@@ -3,9 +3,9 @@ import {pollChecks as poll} from '../src/poll.check'
 const client = {
   rest: {
     checks: {
-      listForRef: jest.fn()
-    }
-  }
+      listForRef: jest.fn(),
+    },
+  },
 }
 
 const run = () =>
@@ -18,7 +18,7 @@ const run = () =>
     ref: 'abcd',
     timeoutSeconds: 3,
     intervalSeconds: 0.1,
-    warmupSeconds: 1
+    warmupSeconds: 1,
   })
 
 test('returns conclusion of last (completed) check', async () => {
@@ -28,16 +28,16 @@ test('returns conclusion of last (completed) check', async () => {
         {
           id: '1',
           status: 'pending',
-          started_at: '2018-05-04T01:14:52Z'
+          started_at: '2018-05-04T01:14:52Z',
         },
         {
           id: '2',
           status: 'completed',
           conclusion: 'success',
-          started_at: '2018-05-04T01:14:53Z'
-        }
-      ]
-    }
+          started_at: '2018-05-04T01:14:53Z',
+        },
+      ],
+    },
   })
 
   const result = await run()
@@ -47,7 +47,7 @@ test('returns conclusion of last (completed) check', async () => {
     owner: 'testOrg',
     repo: 'testRepo',
     ref: 'abcd',
-    check_name: 'test'
+    check_name: 'test',
   })
 })
 
@@ -58,20 +58,20 @@ test('polls until check is completed', async () => {
         check_runs: [
           {
             id: '1',
-            status: 'pending'
-          }
-        ]
-      }
+            status: 'pending',
+          },
+        ],
+      },
     })
     .mockResolvedValueOnce({
       data: {
         check_runs: [
           {
             id: '1',
-            status: 'pending'
-          }
-        ]
-      }
+            status: 'pending',
+          },
+        ],
+      },
     })
     .mockResolvedValueOnce({
       data: {
@@ -79,10 +79,10 @@ test('polls until check is completed', async () => {
           {
             id: '1',
             status: 'completed',
-            conclusion: 'failure'
-          }
-        ]
-      }
+            conclusion: 'failure',
+          },
+        ],
+      },
     })
 
   const result = await run()
@@ -97,10 +97,10 @@ test(`returns 'timed_out' if exceeding deadline`, async () => {
       check_runs: [
         {
           id: '1',
-          status: 'pending'
-        }
-      ]
-    }
+          status: 'pending',
+        },
+      ],
+    },
   })
 
   const result = await run()
@@ -110,8 +110,8 @@ test(`returns 'timed_out' if exceeding deadline`, async () => {
 test(`returns 'not_found' if not found in warmup`, async () => {
   client.rest.checks.listForRef.mockResolvedValue({
     data: {
-      check_runs: []
-    }
+      check_runs: [],
+    },
   })
 
   const result = await run()
@@ -127,15 +127,15 @@ test('polls until all checks are completed', async () => {
             id: '1',
             status: 'completed',
             conclusion: 'failure',
-            started_at: '2018-05-04T01:14:52Z'
+            started_at: '2018-05-04T01:14:52Z',
           },
           {
             id: '2',
             status: 'pending',
-            started_at: '2018-05-04T01:14:53Z'
-          }
-        ]
-      }
+            started_at: '2018-05-04T01:14:53Z',
+          },
+        ],
+      },
     })
     .mockResolvedValueOnce({
       data: {
@@ -144,15 +144,15 @@ test('polls until all checks are completed', async () => {
             id: '1',
             status: 'completed',
             conclusion: 'failure',
-            started_at: '2018-05-04T01:14:52Z'
+            started_at: '2018-05-04T01:14:52Z',
           },
           {
             id: '2',
             status: 'pending',
-            started_at: '2018-05-04T01:14:53Z'
-          }
-        ]
-      }
+            started_at: '2018-05-04T01:14:53Z',
+          },
+        ],
+      },
     })
     .mockResolvedValueOnce({
       data: {
@@ -161,16 +161,16 @@ test('polls until all checks are completed', async () => {
             id: '1',
             status: 'completed',
             conclusion: 'failure',
-            started_at: '2018-05-04T01:14:52Z'
+            started_at: '2018-05-04T01:14:52Z',
           },
           {
             id: '2',
             status: 'completed',
             conclusion: 'success',
-            started_at: '2018-05-04T01:14:53Z'
-          }
-        ]
-      }
+            started_at: '2018-05-04T01:14:53Z',
+          },
+        ],
+      },
     })
 
   const result = await run()
@@ -187,16 +187,16 @@ test('reflects the status of the last started run', async () => {
           id: '1',
           status: 'completed',
           conclusion: 'failure',
-          started_at: '2018-01-01T00:00:01Z'
+          started_at: '2018-01-01T00:00:01Z',
         },
         {
           id: '2',
           status: 'completed',
           conclusion: 'success',
-          started_at: '2018-01-01T00:00:00Z'
-        }
-      ]
-    }
+          started_at: '2018-01-01T00:00:00Z',
+        },
+      ],
+    },
   })
 
   const result = await run()
