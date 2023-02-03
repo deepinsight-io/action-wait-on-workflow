@@ -59,14 +59,7 @@ function run() {
             };
             const checkName = core.getInput('checkName');
             const workflowName = core.getInput('workflowName');
-            if (checkName === '' && workflowName === '') {
-                core.setFailed("Either 'checkName' xor 'workflowName' must be provided");
-                return;
-            }
-            if (checkName !== '' && workflowName !== '') {
-                core.debug(`checkName: '${checkName}'`);
-                core.debug(`workflowName: '${workflowName}'`);
-                core.setFailed("'checkName' and 'workflowName' cannot both be provided");
+            if (!areCheckNameAndWorkflowNameValid(checkName, workflowName)) {
                 return;
             }
             if (checkName !== '') {
@@ -82,6 +75,19 @@ function run() {
             core.setFailed(error instanceof Error ? error : JSON.stringify(error));
         }
     });
+}
+function areCheckNameAndWorkflowNameValid(checkName, workflowName) {
+    if (checkName === '' && workflowName === '') {
+        core.setFailed("Either 'checkName' xor 'workflowName' must be provided");
+        return false;
+    }
+    if (checkName !== '' && workflowName !== '') {
+        core.debug(`checkName: '${checkName}'`);
+        core.debug(`workflowName: '${workflowName}'`);
+        core.setFailed("'checkName' and 'workflowName' cannot both be provided");
+        return false;
+    }
+    return true;
 }
 run();
 

@@ -21,15 +21,7 @@ async function run(): Promise<void> {
 
     const checkName = core.getInput('checkName')
     const workflowName = core.getInput('workflowName')
-
-    if (checkName === '' && workflowName === '') {
-      core.setFailed("Either 'checkName' xor 'workflowName' must be provided")
-      return
-    }
-    if (checkName !== '' && workflowName !== '') {
-      core.debug(`checkName: '${checkName}'`)
-      core.debug(`workflowName: '${workflowName}'`)
-      core.setFailed("'checkName' and 'workflowName' cannot both be provided")
+    if (!areCheckNameAndWorkflowNameValid(checkName, workflowName)) {
       return
     }
 
@@ -45,4 +37,17 @@ async function run(): Promise<void> {
   }
 }
 
+function areCheckNameAndWorkflowNameValid(checkName: string, workflowName: string): boolean {
+  if (checkName === '' && workflowName === '') {
+    core.setFailed("Either 'checkName' xor 'workflowName' must be provided")
+    return false
+  }
+  if (checkName !== '' && workflowName !== '') {
+    core.debug(`checkName: '${checkName}'`)
+    core.debug(`workflowName: '${workflowName}'`)
+    core.setFailed("'checkName' and 'workflowName' cannot both be provided")
+    return false
+  }
+  return true
+}
 run()
