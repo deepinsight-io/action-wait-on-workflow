@@ -67,7 +67,10 @@ function run() {
                 core.setFailed("'checkName' and 'workflowName' cannot both be provided");
                 return;
             }
-            if (checkName !== undefined) {
+            core.debug('is debug on?');
+            core.info(`checkName: '${checkName}'`);
+            core.info(`workflowName: '${workflowName}'`);
+            if (checkName !== '') {
                 const result = yield (0, poll_check_1.pollChecks)(Object.assign(Object.assign({}, inputs), { checkName }));
                 core.setOutput('conclusion', result);
             }
