@@ -126,6 +126,7 @@ class CheckPoller {
                 return lastStartedCheck.conclusion;
             }
             log(`No completed checks named ${checkName}, waiting for ${intervalSeconds} seconds...`);
+            log('');
             return lastStartedCheck === undefined ? undefined : null;
         });
     }
@@ -228,6 +229,7 @@ class WorkflowPoller {
     func(options, start, now) {
         return __awaiter(this, void 0, void 0, function* () {
             const workflow = yield this.getLatestWorkflowRunId(options);
+            options.log('');
             if (workflow === undefined) {
                 return undefined;
             }
