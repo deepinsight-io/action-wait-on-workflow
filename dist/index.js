@@ -59,7 +59,7 @@ function run() {
             };
             const checkName = core.getInput('checkName');
             const workflowName = core.getInput('workflowName');
-            if (checkName === undefined && workflowName === undefined) {
+            if (checkName === '' && workflowName === '') {
                 core.setFailed("Either 'checkName' or 'workflowName' must be provided");
                 return;
             }
@@ -230,8 +230,8 @@ class WorkflowPoller {
     }
     getWorkflowRuns(options) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { client, log, owner, repo, ref: head_sha } = options;
-            log(`Getting workflow runs`);
+            const { client, log, owner, repo, ref: head_sha, workflowName } = options;
+            log(`Getting workflow runs named '${workflowName}'`);
             const response = yield client.request('GET /repos/{owner}/{repo}/actions/runs', {
                 owner,
                 repo,
@@ -266,11 +266,11 @@ class WorkflowPoller {
     onTimedOut(options, warmupDeadlined) {
         const { log, timeoutSeconds, warmupSeconds } = options;
         if (warmupDeadlined) {
-            log(`No checks found after ${warmupSeconds} seconds, exiting with conclusion 'not_found'`);
+            log(`No workflow runs found after ${warmupSeconds} seconds, exiting with conclusion 'not_found'`);
             return 'not_found';
         }
         else {
-            log(`No completed checks after ${timeoutSeconds} seconds, exiting with conclusion 'timed_out'`);
+            log(`No completed workflow runs after ${timeoutSeconds} seconds, exiting with conclusion 'timed_out'`);
             return 'timed_out';
         }
     }

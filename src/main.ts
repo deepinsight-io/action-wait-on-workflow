@@ -22,7 +22,7 @@ async function run(): Promise<void> {
     const checkName = core.getInput('checkName')
     const workflowName = core.getInput('workflowName')
 
-    if (checkName === undefined && workflowName === undefined) {
+    if (checkName === '' && workflowName === '') {
       core.setFailed("Either 'checkName' or 'workflowName' must be provided")
       return
     }

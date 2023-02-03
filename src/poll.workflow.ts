@@ -15,8 +15,8 @@ class WorkflowPoller implements Poller<Options> {
     return workflow.conclusion || null
   }
   private async getWorkflowRuns(options: Options): Promise<WorkflowRun[]> {
-    const {client, log, owner, repo, ref: head_sha} = options
-    log(`Getting workflow runs`)
+    const {client, log, owner, repo, ref: head_sha, workflowName} = options
+    log(`Getting workflow runs named '${workflowName}'`)
     const response = await client.request('GET /repos/{owner}/{repo}/actions/runs', {
       owner,
       repo,
@@ -50,10 +50,10 @@ class WorkflowPoller implements Poller<Options> {
   public onTimedOut(options: Options, warmupDeadlined: boolean): string {
     const {log, timeoutSeconds, warmupSeconds} = options
     if (warmupDeadlined) {
-      log(`No checks found after ${warmupSeconds} seconds, exiting with conclusion 'not_found'`)
+      log(`No workflow runs found after ${warmupSeconds} seconds, exiting with conclusion 'not_found'`)
       return 'not_found'
     } else {
-      log(`No completed checks after ${timeoutSeconds} seconds, exiting with conclusion 'timed_out'`)
+      log(`No completed workflow runs after ${timeoutSeconds} seconds, exiting with conclusion 'timed_out'`)
       return 'timed_out'
     }
   }
