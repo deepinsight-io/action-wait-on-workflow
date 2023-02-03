@@ -266,7 +266,7 @@ class WorkflowPoller {
             }
             log(`${workflowRuns.length} workflow runs with name '${workflowName}' have been found`);
             const latestWorkflowRun = (0, utils_1.maxBy)(workflowRuns, run => (run.run_attempt === undefined ? -1 : run.run_attempt));
-            log(`The highest run_attempt is ${latestWorkflowRun.run_attempt}, id=${latestWorkflowRun.id}`);
+            log(`The highest run_attempt is ${latestWorkflowRun.run_attempt}, id=${latestWorkflowRun.id}, status='${latestWorkflowRun.status}'`);
             return latestWorkflowRun;
         });
     }
