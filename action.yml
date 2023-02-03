@@ -9,8 +9,9 @@ inputs:
     description: 'The GitHub token to use for making API requests.'
     required: true
   checkName:
-    description: 'The name of the GitHub check to wait for. For example, `build` or `deploy`.'
-    required: true
+    description: 'The name of the GitHub check to wait for. For example, `build` or `deploy`. Either this xor "workflowName" must be provided.'
+  workflowName:
+    description: 'The name of the GitHub workflow to wait for. For example, `build` or `deploy`. Either this xor "checkName" must be provided.'
   ref:
     description: |
       The Git ref of the commit you want to poll for a passing check.

@@ -23,7 +23,11 @@ async function run(): Promise<void> {
     const workflowName = core.getInput('workflowName')
 
     if (checkName === '' && workflowName === '') {
-      core.setFailed("Either 'checkName' or 'workflowName' must be provided")
+      core.setFailed("Either 'checkName' xor 'workflowName' must be provided")
+      return
+    }
+    if (checkName !== '' && workflowName !== '') {
+      core.setFailed("'checkName' and 'workflowName' cannot both be provided")
       return
     }
 
