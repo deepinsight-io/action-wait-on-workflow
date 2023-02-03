@@ -34,7 +34,7 @@ async function run(): Promise<void> {
     core.info(`checkName: '${checkName}'`)
     core.info(`workflowName: '${workflowName}'`)
 
-    if (checkName !== undefined) {
+    if (checkName !== '') {
       const result = await pollChecks({...inputs, checkName})
       core.setOutput('conclusion', result)
     } else {
