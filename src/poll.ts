@@ -6,7 +6,7 @@ export interface Poller<TOptions> {
   @returns: undefined if nothing has been found, null if something has been found but it doesn't meet the criteria.
             otherwise a string with the result
   */
-  func: (options: TOptions, start: number, now: number) => Promise<string | undefined | null>
+  func: (options: TOptions) => Promise<string | undefined | null>
   onTimedOut: (options: TOptions, warmupDeadlined: boolean) => string
 }
 
@@ -22,7 +22,7 @@ export async function poll<
   let previouslyFound = false
 
   while (now <= deadline) {
-    const result = await poller.func(options, start, now)
+    const result = await poller.func(options)
     if (result !== undefined && result !== null) {
       return result
     }

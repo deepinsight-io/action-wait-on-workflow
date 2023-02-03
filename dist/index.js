@@ -187,7 +187,7 @@ function poll(options, poller) {
         let now = start;
         let previouslyFound = false;
         while (now <= deadline) {
-            const result = yield poller.func(options, start, now);
+            const result = yield poller.func(options);
             if (result !== undefined && result !== null) {
                 return result;
             }
@@ -225,8 +225,7 @@ exports.pollWorkflows = void 0;
 const utils_1 = __nccwpck_require__(918);
 const poll_1 = __nccwpck_require__(5498);
 class WorkflowPoller {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    func(options, start, now) {
+    func(options) {
         return __awaiter(this, void 0, void 0, function* () {
             const workflow = yield this.getLatestWorkflowRunId(options);
             options.log('');

@@ -6,8 +6,7 @@ import {poll, Poller} from './poll'
 type WorkflowRun = components['schemas']['workflow-run']
 
 class WorkflowPoller implements Poller<Options> {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async func(options: Options, start: number, now: number): Promise<string | null | undefined> {
+  public async func(options: Options): Promise<string | null | undefined> {
     const workflow = await this.getLatestWorkflowRunId(options)
     options.log('')
     if (workflow === undefined) {
