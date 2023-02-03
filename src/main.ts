@@ -27,12 +27,11 @@ async function run(): Promise<void> {
       return
     }
     if (checkName !== '' && workflowName !== '') {
+      core.debug(`checkName: '${checkName}'`)
+      core.debug(`workflowName: '${workflowName}'`)
       core.setFailed("'checkName' and 'workflowName' cannot both be provided")
       return
     }
-    core.debug('is debug on?')
-    core.info(`checkName: '${checkName}'`)
-    core.info(`workflowName: '${workflowName}'`)
 
     if (checkName !== '') {
       const result = await pollChecks({...inputs, checkName})
