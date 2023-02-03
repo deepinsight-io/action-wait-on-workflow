@@ -1,70 +1,40 @@
-import {GitHub} from '@actions/github/lib/utils'
 import {wait} from './wait'
-import {maxBy} from './utils'
-import type {components} from '@octokit/openapi-types'
-type CheckRun = components['schemas']['check-run']
+import {SharedOptions} from './options'
 
-export interface Options {
-  client: InstanceType<typeof GitHub>
-  log: (message: string) => void
-
-  checkName: string
-  timeoutSeconds: number
-  intervalSeconds: number
-  warmupSeconds: number
-  owner: string
-  repo: string
-  ref: string
+export interface Poller<TOptions> {
+  /*
+  @returns: undefined if nothing has been found, null if something has been found but it doesn't meet the criteria.
+            otherwise a string with the result
+  */
+  func: (options: TOptions) => Promise<string | undefined | null>
+  onTimedOut: (options: TOptions, warmupDeadlined: boolean) => string
 }
 
-export const poll = async (options: Options): Promise<string> => {
-  const {client, log, checkName, timeoutSeconds, intervalSeconds, warmupSeconds, owner, repo, ref} = options
+export async function poll<
+  TOptions extends Pick<SharedOptions, 'timeoutSeconds' | 'intervalSeconds' | 'warmupSeconds'>
+>(options: TOptions, poller: Poller<TOptions>): Promise<string> {
+  const {timeoutSeconds, intervalSeconds, warmupSeconds} = options
 
-  let now = new Date().getTime()
-  const deadline = now + timeoutSeconds * 1000
-  const warmupDeadline = now + warmupSeconds * 1000
-  let foundRun = false
+  const start = new Date().getTime()
+  const deadline = start + timeoutSeconds * 1000
+  const warmupDeadline = start + warmupSeconds * 1000
+  let now = start
+  let previouslyFound = false
 
   while (now <= deadline) {
-    log(`Retrieving check runs named ${checkName} on ${owner}/${repo}@${ref}...`)
-    const result = await client.rest.checks.listForRef({
-      check_name: checkName,
-      owner,
-      repo,
-      ref
-    })
-
-    log(`Retrieved ${result.data.check_runs.length} check runs named ${checkName}`)
-
-    foundRun = foundRun || result.data.check_runs.length !== 0
-
-    if (now >= warmupDeadline && !foundRun) {
-      log(`No checks found after ${warmupSeconds} seconds, exiting with conclusion 'not_found'`)
-      return 'not_found'
+    const result = await poller.func(options)
+    if (result !== undefined && result !== null) {
+      return result
     }
 
-    const lastStartedCheck = getLastStartedCheck(result.data.check_runs)
-    if (lastStartedCheck !== undefined && lastStartedCheck.status === 'completed') {
-      log(`Found a completed check with id ${lastStartedCheck.id} and conclusion ${lastStartedCheck.conclusion}`)
-      // conclusion is only `null` if status is not `completed`.
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return lastStartedCheck.conclusion!
+    previouslyFound = previouslyFound || result === null
+    if (!previouslyFound && now >= warmupDeadline) {
+      return poller.onTimedOut(options, true)
     }
 
-    log(`No completed checks named ${checkName}, waiting for ${intervalSeconds} seconds...`)
     await wait(intervalSeconds * 1000)
-
     now = new Date().getTime()
   }
 
-  log(`No completed checks after ${timeoutSeconds} seconds, exiting with conclusion 'timed_out'`)
-  return 'timed_out'
-}
-function getLastStartedCheck(checks: CheckRun[]): CheckRun | undefined {
-  if (checks.length === 0) return undefined
-
-  return maxBy(checks, c => {
-    if (c.started_at === null) throw new Error('c.started_at === null')
-    return Date.parse(c.started_at)
-  })
+  return poller.onTimedOut(options, false)
 }

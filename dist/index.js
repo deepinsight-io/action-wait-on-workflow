@@ -41,24 +41,42 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
 const github_1 = __nccwpck_require__(5438);
-const poll_1 = __nccwpck_require__(5498);
+const poll_check_1 = __nccwpck_require__(9451);
+const poll_workflow_1 = __nccwpck_require__(7252);
 function run() {
     var _a;
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const token = core.getInput('token', { required: true });
-            const result = yield (0, poll_1.poll)({
-                client: (0, github_1.getOctokit)(token),
-                log: msg => core.info(msg),
-                checkName: core.getInput('checkName', { required: true }),
+            const inputs = {
+                client: (0, github_1.getOctokit)(core.getInput('token', { required: true })),
                 owner: core.getInput('owner') || github_1.context.repo.owner,
                 repo: core.getInput('repo') || github_1.context.repo.repo,
                 ref: core.getInput('ref') || ((_a = github_1.context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.head.sha) || github_1.context.sha,
                 timeoutSeconds: parseInt(core.getInput('timeoutSeconds') || '600'),
                 intervalSeconds: parseInt(core.getInput('intervalSeconds') || '10'),
-                warmupSeconds: parseInt(core.getInput('warmupSeconds') || '10')
-            });
-            core.setOutput('conclusion', result);
+                warmupSeconds: parseInt(core.getInput('warmupSeconds') || '10'),
+                log: msg => core.info(msg),
+            };
+            const checkName = core.getInput('checkName');
+            const workflowName = core.getInput('workflowName');
+            if (checkName === '' && workflowName === '') {
+                core.setFailed("Either 'checkName' xor 'workflowName' must be provided");
+                return;
+            }
+            if (checkName !== '' && workflowName !== '') {
+                core.debug(`checkName: '${checkName}'`);
+                core.debug(`workflowName: '${workflowName}'`);
+                core.setFailed("'checkName' and 'workflowName' cannot both be provided");
+                return;
+            }
+            if (checkName !== '') {
+                const result = yield (0, poll_check_1.pollChecks)(Object.assign(Object.assign({}, inputs), { checkName }));
+                core.setOutput('conclusion', result);
+            }
+            else {
+                const result = yield (0, poll_workflow_1.pollWorkflows)(Object.assign(Object.assign({}, inputs), { workflowName }));
+                core.setOutput('conclusion', result);
+            }
         }
         catch (error) {
             core.setFailed(error instanceof Error ? error : JSON.stringify(error));
@@ -66,6 +84,79 @@ function run() {
     });
 }
 run();
+
+
+/***/ }),
+
+/***/ 9451:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.pollChecks = void 0;
+const utils_1 = __nccwpck_require__(918);
+const poll_1 = __nccwpck_require__(5498);
+class CheckPoller {
+    func(options) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { client, log, checkName, intervalSeconds, owner, repo, ref } = options;
+            log(`Retrieving check runs named ${checkName} on ${owner}/${repo}@${ref}...`);
+            const result = yield client.rest.checks.listForRef({
+                check_name: checkName,
+                owner,
+                repo,
+                ref,
+            });
+            log(`Retrieved ${result.data.check_runs.length} check runs named ${checkName}`);
+            const lastStartedCheck = this.getLastStartedCheck(result.data.check_runs);
+            if (lastStartedCheck !== undefined && lastStartedCheck.status === 'completed') {
+                log(`Found a completed check with id ${lastStartedCheck.id} and conclusion ${lastStartedCheck.conclusion}`);
+                // conclusion is only `null` if status is not `completed`.
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                return lastStartedCheck.conclusion;
+            }
+            log(`No completed checks named ${checkName}, waiting for ${intervalSeconds} seconds...`);
+            log('');
+            return lastStartedCheck === undefined ? undefined : null;
+        });
+    }
+    onTimedOut(options, warmupDeadlined) {
+        const { log, timeoutSeconds, warmupSeconds } = options;
+        if (warmupDeadlined) {
+            log(`No checks found after ${warmupSeconds} seconds, exiting with conclusion 'not_found'`);
+            return 'not_found';
+        }
+        else {
+            log(`No completed checks after ${timeoutSeconds} seconds, exiting with conclusion 'timed_out'`);
+            return 'timed_out';
+        }
+    }
+    getLastStartedCheck(checks) {
+        if (checks.length === 0)
+            return undefined;
+        return (0, utils_1.maxBy)(checks, c => {
+            if (c.started_at === null)
+                throw new Error('c.started_at === null');
+            return Date.parse(c.started_at);
+        });
+    }
+}
+function pollChecks(options) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return yield (0, poll_1.poll)(options, new CheckPoller());
+    });
+}
+exports.pollChecks = pollChecks;
 
 
 /***/ }),
@@ -87,51 +178,117 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.poll = void 0;
 const wait_1 = __nccwpck_require__(5817);
-const utils_1 = __nccwpck_require__(918);
-const poll = (options) => __awaiter(void 0, void 0, void 0, function* () {
-    const { client, log, checkName, timeoutSeconds, intervalSeconds, warmupSeconds, owner, repo, ref } = options;
-    let now = new Date().getTime();
-    const deadline = now + timeoutSeconds * 1000;
-    const warmupDeadline = now + warmupSeconds * 1000;
-    let foundRun = false;
-    while (now <= deadline) {
-        log(`Retrieving check runs named ${checkName} on ${owner}/${repo}@${ref}...`);
-        const result = yield client.rest.checks.listForRef({
-            check_name: checkName,
-            owner,
-            repo,
-            ref
-        });
-        log(`Retrieved ${result.data.check_runs.length} check runs named ${checkName}`);
-        foundRun = foundRun || result.data.check_runs.length !== 0;
-        if (now >= warmupDeadline && !foundRun) {
-            log(`No checks found after ${warmupSeconds} seconds, exiting with conclusion 'not_found'`);
-            return 'not_found';
+function poll(options, poller) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const { timeoutSeconds, intervalSeconds, warmupSeconds } = options;
+        const start = new Date().getTime();
+        const deadline = start + timeoutSeconds * 1000;
+        const warmupDeadline = start + warmupSeconds * 1000;
+        let now = start;
+        let previouslyFound = false;
+        while (now <= deadline) {
+            const result = yield poller.func(options);
+            if (result !== undefined && result !== null) {
+                return result;
+            }
+            previouslyFound = previouslyFound || result === null;
+            if (!previouslyFound && now >= warmupDeadline) {
+                return poller.onTimedOut(options, true);
+            }
+            yield (0, wait_1.wait)(intervalSeconds * 1000);
+            now = new Date().getTime();
         }
-        const lastStartedCheck = getLastStartedCheck(result.data.check_runs);
-        if (lastStartedCheck !== undefined && lastStartedCheck.status === 'completed') {
-            log(`Found a completed check with id ${lastStartedCheck.id} and conclusion ${lastStartedCheck.conclusion}`);
-            // conclusion is only `null` if status is not `completed`.
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            return lastStartedCheck.conclusion;
-        }
-        log(`No completed checks named ${checkName}, waiting for ${intervalSeconds} seconds...`);
-        yield (0, wait_1.wait)(intervalSeconds * 1000);
-        now = new Date().getTime();
-    }
-    log(`No completed checks after ${timeoutSeconds} seconds, exiting with conclusion 'timed_out'`);
-    return 'timed_out';
-});
-exports.poll = poll;
-function getLastStartedCheck(checks) {
-    if (checks.length === 0)
-        return undefined;
-    return (0, utils_1.maxBy)(checks, c => {
-        if (c.started_at === null)
-            throw new Error('c.started_at === null');
-        return Date.parse(c.started_at);
+        return poller.onTimedOut(options, false);
     });
 }
+exports.poll = poll;
+
+
+/***/ }),
+
+/***/ 7252:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.pollWorkflows = void 0;
+const utils_1 = __nccwpck_require__(918);
+const poll_1 = __nccwpck_require__(5498);
+class WorkflowPoller {
+    func(options) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const workflow = yield this.getLatestWorkflowRunId(options);
+            options.log('');
+            if (workflow === undefined) {
+                return undefined;
+            }
+            return workflow.conclusion || null;
+        });
+    }
+    getWorkflowRuns(options) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { client, log, owner, repo, ref: head_sha, workflowName } = options;
+            log(`Getting workflow runs named '${workflowName}'`);
+            const response = yield client.request('GET /repos/{owner}/{repo}/actions/runs', {
+                owner,
+                repo,
+                head_sha,
+            });
+            log(`Received ${response.data.total_count} runs`);
+            return response.data.workflow_runs;
+        });
+    }
+    getLatestWorkflowRunId(options) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { log, workflowName, ref } = options;
+            const allWorkflowRuns = yield this.getWorkflowRuns(options);
+            if (allWorkflowRuns.length === 0) {
+                log(`No workflow runs found for ${ref}`);
+                return undefined;
+            }
+            const workflowRuns = allWorkflowRuns.filter(run => run.name === workflowName);
+            if (workflowRuns.length === 0) {
+                log(`No workflow run name '${workflowName}' found for ${ref}. Names that exist are:`);
+                for (const runName of [...new Set(allWorkflowRuns.map(run => run.name))].sort(undefined)) {
+                    log(`- ${runName}`);
+                }
+                return undefined;
+            }
+            log(`${workflowRuns.length} workflow runs with name '${workflowName}' have been found`);
+            const latestWorkflowRun = (0, utils_1.maxBy)(workflowRuns, run => (run.run_attempt === undefined ? -1 : run.run_attempt));
+            log(`The highest run_attempt is ${latestWorkflowRun.run_attempt} (id=${latestWorkflowRun.id}) with status '${latestWorkflowRun.status}'`);
+            return latestWorkflowRun;
+        });
+    }
+    onTimedOut(options, warmupDeadlined) {
+        const { log, timeoutSeconds, warmupSeconds } = options;
+        if (warmupDeadlined) {
+            log(`No workflow runs found after ${warmupSeconds} seconds, exiting with conclusion 'not_found'`);
+            return 'not_found';
+        }
+        else {
+            log(`No completed workflow runs after ${timeoutSeconds} seconds, exiting with conclusion 'timed_out'`);
+            return 'timed_out';
+        }
+    }
+}
+function pollWorkflows(options) {
+    return __awaiter(this, void 0, void 0, function* () {
+        // returns 'success' | 'already_running' | 'not_found'
+        return (0, poll_1.poll)(options, new WorkflowPoller());
+    });
+}
+exports.pollWorkflows = pollWorkflows;
 
 
 /***/ }),
