@@ -52,9 +52,9 @@ function run() {
                 owner: core.getInput('owner') || github_1.context.repo.owner,
                 repo: core.getInput('repo') || github_1.context.repo.repo,
                 ref: core.getInput('ref') || ((_a = github_1.context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.head.sha) || github_1.context.sha,
-                timeoutSeconds: parseInt(core.getInput('timeoutSeconds') || '600'),
-                intervalSeconds: parseInt(core.getInput('intervalSeconds') || '10'),
-                warmupSeconds: parseInt(core.getInput('warmupSeconds') || '10'),
+                timeoutSeconds: parseInt(core.getInput('timeoutSeconds')),
+                intervalSeconds: parseInt(core.getInput('intervalSeconds')),
+                warmupSeconds: parseInt(core.getInput('warmupSeconds')),
                 log: msg => core.info(msg),
             };
             const checkName = core.getInput('checkName');
@@ -116,22 +116,22 @@ class CheckPoller {
     func(options) {
         return __awaiter(this, void 0, void 0, function* () {
             const { client, log, checkName, intervalSeconds, owner, repo, ref } = options;
-            log(`Retrieving check runs named ${checkName} on ${owner}/${repo}@${ref}...`);
+            log(`Retrieving check runs named '${checkName}' on ${owner}/${repo}@${ref}...`);
             const result = yield client.rest.checks.listForRef({
                 check_name: checkName,
                 owner,
                 repo,
                 ref,
             });
-            log(`Retrieved ${result.data.check_runs.length} check runs named ${checkName}`);
+            log(`Retrieved ${result.data.check_runs.length} check runs named '${checkName}'`);
             const lastStartedCheck = this.getLastStartedCheck(result.data.check_runs);
             if (lastStartedCheck !== undefined && lastStartedCheck.status === 'completed') {
-                log(`Found a completed check with id ${lastStartedCheck.id} and conclusion ${lastStartedCheck.conclusion}`);
+                log(`Found a completed check with id ${lastStartedCheck.id} and conclusion '${lastStartedCheck.conclusion}'`);
                 // conclusion is only `null` if status is not `completed`.
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 return lastStartedCheck.conclusion;
             }
-            log(`No completed checks named ${checkName}, waiting for ${intervalSeconds} seconds...`);
+            log(`No completed checks named '${checkName}', waiting for ${intervalSeconds} seconds...`);
             log('');
             return lastStartedCheck === undefined ? undefined : null;
         });
