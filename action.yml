@@ -18,7 +18,7 @@ inputs:
       By default the PR head if present; otherwise the current sha.
   successConclusions:
     description: |
-      A list of conlusions of the check/workflow run that will result in the action run succeeding.
+      A list of conlusions of the check/workflow run that will result in this action run succeeding.
       Possible options are: 
           success|failure|neutral|cancelled|skipped|timed_out|action_required
     default: "success|skipped"
