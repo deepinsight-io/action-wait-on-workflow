@@ -66,13 +66,9 @@ function run() {
             if (successConclusions === undefined) {
                 return;
             }
-            let conclusion;
-            if (checkName !== '') {
-                conclusion = yield (0, poll_check_1.pollChecks)(Object.assign(Object.assign({}, inputs), { checkName }));
-            }
-            else {
-                conclusion = yield (0, poll_workflow_1.pollWorkflows)(Object.assign(Object.assign({}, inputs), { workflowName }));
-            }
+            const conclusion = checkName !== '' //
+                ? yield (0, poll_check_1.pollChecks)(Object.assign(Object.assign({}, inputs), { checkName }))
+                : yield (0, poll_workflow_1.pollWorkflows)(Object.assign(Object.assign({}, inputs), { workflowName }));
             core.setOutput('conclusion', conclusion);
             if (successConclusions.includes(conclusion)) {
                 core.setFailed(`Conclusion '${conclusion}' was not defined as a success'`);

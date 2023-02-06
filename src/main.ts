@@ -30,12 +30,10 @@ async function run(): Promise<void> {
       return
     }
 
-    let conclusion: string
-    if (checkName !== '') {
-      conclusion = await pollChecks({...inputs, checkName})
-    } else {
-      conclusion = await pollWorkflows({...inputs, workflowName})
-    }
+    const conclusion =
+      checkName !== '' //
+        ? await pollChecks({...inputs, checkName})
+        : await pollWorkflows({...inputs, workflowName})
     core.setOutput('conclusion', conclusion)
     if (successConclusions.includes(conclusion)) {
       core.setFailed(`Conclusion '${conclusion}' was not defined as a success'`)
