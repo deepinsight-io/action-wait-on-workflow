@@ -3,6 +3,7 @@ import {context, getOctokit} from '@actions/github'
 import {SharedOptions} from './options'
 import {pollChecks} from './poll.check'
 import {pollWorkflows} from './poll.workflow'
+import {parseSuccessConclusions} from './utils'
 
 async function run(): Promise<void> {
   try {
@@ -25,12 +26,18 @@ async function run(): Promise<void> {
       return
     }
 
-    if (checkName !== '') {
-      const result = await pollChecks({...inputs, checkName})
-      core.setOutput('conclusion', result)
-    } else {
-      const result = await pollWorkflows({...inputs, workflowName})
-      core.setOutput('conclusion', result)
+    const successConclusions = parseSuccessConclusions(core.getInput('successConclusions'), core)
+    if (successConclusions === undefined) {
+      return
+    }
+
+    const conclusion =
+      checkName !== '' //
+        ? await pollChecks({...inputs, checkName})
+        : await pollWorkflows({...inputs, workflowName})
+    core.setOutput('conclusion', conclusion)
+    if (!successConclusions.includes(conclusion)) {
+      core.setFailed(`Conclusion '${conclusion}' was not defined as a success`)
     }
   } catch (error) {
     core.setFailed(error instanceof Error ? error : JSON.stringify(error))

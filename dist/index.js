@@ -43,6 +43,7 @@ const core = __importStar(__nccwpck_require__(2186));
 const github_1 = __nccwpck_require__(5438);
 const poll_check_1 = __nccwpck_require__(9451);
 const poll_workflow_1 = __nccwpck_require__(7252);
+const utils_1 = __nccwpck_require__(918);
 function run() {
     var _a;
     return __awaiter(this, void 0, void 0, function* () {
@@ -62,13 +63,16 @@ function run() {
             if (!areCheckNameAndWorkflowNameValid(checkName, workflowName)) {
                 return;
             }
-            if (checkName !== '') {
-                const result = yield (0, poll_check_1.pollChecks)(Object.assign(Object.assign({}, inputs), { checkName }));
-                core.setOutput('conclusion', result);
+            const successConclusions = (0, utils_1.parseSuccessConclusions)(core.getInput('successConclusions'), core);
+            if (successConclusions === undefined) {
+                return;
             }
-            else {
-                const result = yield (0, poll_workflow_1.pollWorkflows)(Object.assign(Object.assign({}, inputs), { workflowName }));
-                core.setOutput('conclusion', result);
+            const conclusion = checkName !== '' //
+                ? yield (0, poll_check_1.pollChecks)(Object.assign(Object.assign({}, inputs), { checkName }))
+                : yield (0, poll_workflow_1.pollWorkflows)(Object.assign(Object.assign({}, inputs), { workflowName }));
+            core.setOutput('conclusion', conclusion);
+            if (!successConclusions.includes(conclusion)) {
+                core.setFailed(`Conclusion '${conclusion}' was not defined as a success`);
             }
         }
         catch (error) {
@@ -305,7 +309,7 @@ exports.pollWorkflows = pollWorkflows;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.maxBy = void 0;
+exports.parseSuccessConclusions = exports.maxBy = void 0;
 function maxBy(array, selector) {
     if (array.length === 0) {
         throw new Error('Array empty');
@@ -322,6 +326,17 @@ function maxBy(array, selector) {
     return maxElement;
 }
 exports.maxBy = maxBy;
+function parseSuccessConclusions(successConclusions, core) {
+    const regex = /^(success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found)(\|(success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found))*$/;
+    if (!regex.test(successConclusions)) {
+        core.setFailed("Invalid 'successConclusions'. It must be a pipe-separated non-empty subset of the options 'success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found'");
+        return undefined;
+    }
+    const result = successConclusions.split('|');
+    core.debug(`successConclusions.split('|'): ${JSON.stringify(result)}`);
+    return result;
+}
+exports.parseSuccessConclusions = parseSuccessConclusions;
 
 
 /***/ }),

@@ -16,6 +16,12 @@ inputs:
     description: |
       The Git ref of the commit you want to poll for a passing check.
       By default the PR head if present; otherwise the current sha.
+  successConclusions:
+    description: |
+      A list of conlusions of the check/workflow run that will result in this action run succeeding.
+      Possible options are: 
+          success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found
+    default: "success|skipped|not_found"
   repo:
     description: 'The name of the GitHub repository you want to poll for a passing check.'
   owner:
