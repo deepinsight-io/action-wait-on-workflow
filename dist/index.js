@@ -139,7 +139,7 @@ class CheckPoller {
             log(`Retrieved ${result.data.check_runs.length} check runs named ${checkName}`);
             const lastStartedCheck = this.getLastStartedCheck(result.data.check_runs);
             if (lastStartedCheck !== undefined && lastStartedCheck.status === 'completed') {
-                log(`Found a completed check with id ${lastStartedCheck.id} and conclusion ${lastStartedCheck.conclusion}`);
+                log(`Found a completed check with id ${lastStartedCheck.id} and conclusion '${lastStartedCheck.conclusion}'`);
                 // conclusion is only `null` if status is not `completed`.
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 return lastStartedCheck.conclusion;
