@@ -6,13 +6,6 @@ import {pollWorkflows} from './poll.workflow'
 
 async function run(): Promise<void> {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sc: any = core.getInput('success_conclusions')
-    core.info(sc)
-    core.info(typeof sc)
-    core.info(typeof sc === 'string' ? 'true' : 'false')
-    core.info(`success_conclusions instanceof String: ${sc instanceof String}`)
-
     const inputs: SharedOptions = {
       client: getOctokit(core.getInput('token', {required: true})),
 

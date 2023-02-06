@@ -16,7 +16,7 @@ inputs:
     description: |
       The Git ref of the commit you want to poll for a passing check.
       By default the PR head if present; otherwise the current sha.
-  success_conclusions:
+  successConclusions:
     description: |
       A list of conlusions of the check/workflow run that will result in the action run succeeding.
       Possible options are: 
