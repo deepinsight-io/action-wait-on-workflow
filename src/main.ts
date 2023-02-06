@@ -3,6 +3,7 @@ import {context, getOctokit} from '@actions/github'
 import {SharedOptions} from './options'
 import {pollChecks} from './poll.check'
 import {pollWorkflows} from './poll.workflow'
+import {parseSuccessConclusions} from './utils'
 
 async function run(): Promise<void> {
   try {
@@ -25,7 +26,7 @@ async function run(): Promise<void> {
       return
     }
 
-    const successConclusions = parseSuccessConclusions(core.getInput('successConclusions'))
+    const successConclusions = parseSuccessConclusions(core.getInput('successConclusions'), core)
     if (successConclusions === undefined) {
       return
     }
@@ -56,17 +57,5 @@ function areCheckNameAndWorkflowNameValid(checkName: string, workflowName: strin
   }
   return true
 }
-function parseSuccessConclusions(successConclusions: string): string[] | undefined {
-  const regex =
-    /^(success|failure|neutral|cancelled|skipped|timed_out|action_required)(\|(success|failure|neutral|cancelled|skipped|timed_out|action_required))*$/
-  if (!regex.test(successConclusions)) {
-    core.setFailed(
-      "Invalid 'successConclusions'. It must be a pipe-separated non-empty subset of the options 'success|failure|neutral|cancelled|skipped|timed_out|action_required'"
-    )
-    return undefined
-  }
-  const result = successConclusions.split('|')
-  core.debug(`successConclusions.split('|'): ${JSON.stringify(result)}`)
-  return result
-}
+
 run()
