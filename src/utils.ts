@@ -19,10 +19,10 @@ export function maxBy<T>(array: T[], selector: (element: T) => number): T {
 
 export function parseSuccessConclusions(successConclusions: string, core: typeof actionsCore): string[] | undefined {
   const regex =
-    /^(success|failure|neutral|cancelled|skipped|timed_out|action_required)(\|(success|failure|neutral|cancelled|skipped|timed_out|action_required))*$/
+    /^(success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found)(\|(success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found))*$/
   if (!regex.test(successConclusions)) {
     core.setFailed(
-      "Invalid 'successConclusions'. It must be a pipe-separated non-empty subset of the options 'success|failure|neutral|cancelled|skipped|timed_out|action_required'"
+      "Invalid 'successConclusions'. It must be a pipe-separated non-empty subset of the options 'success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found'"
     )
     return undefined
   }

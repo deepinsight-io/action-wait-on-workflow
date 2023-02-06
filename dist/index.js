@@ -327,9 +327,9 @@ function maxBy(array, selector) {
 }
 exports.maxBy = maxBy;
 function parseSuccessConclusions(successConclusions, core) {
-    const regex = /^(success|failure|neutral|cancelled|skipped|timed_out|action_required)(\|(success|failure|neutral|cancelled|skipped|timed_out|action_required))*$/;
+    const regex = /^(success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found)(\|(success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found))*$/;
     if (!regex.test(successConclusions)) {
-        core.setFailed("Invalid 'successConclusions'. It must be a pipe-separated non-empty subset of the options 'success|failure|neutral|cancelled|skipped|timed_out|action_required'");
+        core.setFailed("Invalid 'successConclusions'. It must be a pipe-separated non-empty subset of the options 'success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found'");
         return undefined;
     }
     const result = successConclusions.split('|');
