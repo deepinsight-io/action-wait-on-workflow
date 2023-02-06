@@ -12,9 +12,9 @@ async function run(): Promise<void> {
       owner: core.getInput('owner') || context.repo.owner,
       repo: core.getInput('repo') || context.repo.repo,
       ref: core.getInput('ref') || context.payload.pull_request?.head.sha || context.sha,
-      timeoutSeconds: parseInt(core.getInput('timeoutSeconds') || '600'),
-      intervalSeconds: parseInt(core.getInput('intervalSeconds') || '10'),
-      warmupSeconds: parseInt(core.getInput('warmupSeconds') || '10'),
+      timeoutSeconds: parseInt(core.getInput('timeoutSeconds')),
+      intervalSeconds: parseInt(core.getInput('intervalSeconds')),
+      warmupSeconds: parseInt(core.getInput('warmupSeconds')),
 
       log: msg => core.info(msg),
     }

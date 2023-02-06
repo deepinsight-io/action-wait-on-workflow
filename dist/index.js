@@ -52,9 +52,9 @@ function run() {
                 owner: core.getInput('owner') || github_1.context.repo.owner,
                 repo: core.getInput('repo') || github_1.context.repo.repo,
                 ref: core.getInput('ref') || ((_a = github_1.context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.head.sha) || github_1.context.sha,
-                timeoutSeconds: parseInt(core.getInput('timeoutSeconds') || '600'),
-                intervalSeconds: parseInt(core.getInput('intervalSeconds') || '10'),
-                warmupSeconds: parseInt(core.getInput('warmupSeconds') || '10'),
+                timeoutSeconds: parseInt(core.getInput('timeoutSeconds')),
+                intervalSeconds: parseInt(core.getInput('intervalSeconds')),
+                warmupSeconds: parseInt(core.getInput('warmupSeconds')),
                 log: msg => core.info(msg),
             };
             const checkName = core.getInput('checkName');
