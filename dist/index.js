@@ -47,12 +47,6 @@ function run() {
     var _a;
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const sc = core.getInput('success_conclusions');
-            core.info(sc);
-            core.info(typeof sc);
-            core.info(typeof sc === 'string' ? 'true' : 'false');
-            core.info(`success_conclusions instanceof String: ${sc instanceof String}`);
             const inputs = {
                 client: (0, github_1.getOctokit)(core.getInput('token', { required: true })),
                 owner: core.getInput('owner') || github_1.context.repo.owner,
@@ -61,19 +55,23 @@ function run() {
                 timeoutSeconds: parseInt(core.getInput('timeoutSeconds') || '600'),
                 intervalSeconds: parseInt(core.getInput('intervalSeconds') || '10'),
                 warmupSeconds: parseInt(core.getInput('warmupSeconds') || '10'),
-                log: msg => core.info(msg),
+                log: (msg) => core.info(msg),
             };
             const checkName = core.getInput('checkName');
             const workflowName = core.getInput('workflowName');
             if (!areCheckNameAndWorkflowNameValid(checkName, workflowName)) {
                 return;
             }
+            const successConclusions = parseSuccessConclusions(core.getInput('successConclusions'));
+            if (successConclusions === undefined) {
+                return;
+            }
             if (checkName !== '') {
-                const result = yield (0, poll_check_1.pollChecks)(Object.assign(Object.assign({}, inputs), { checkName }));
+                const result = yield (0, poll_check_1.pollChecks)(Object.assign(Object.assign({}, inputs), { checkName, successConclusions }));
                 core.setOutput('conclusion', result);
             }
             else {
-                const result = yield (0, poll_workflow_1.pollWorkflows)(Object.assign(Object.assign({}, inputs), { workflowName }));
+                const result = yield (0, poll_workflow_1.pollWorkflows)(Object.assign(Object.assign({}, inputs), { workflowName, successConclusions }));
                 core.setOutput('conclusion', result);
             }
         }
@@ -94,6 +92,14 @@ function areCheckNameAndWorkflowNameValid(checkName, workflowName) {
         return false;
     }
     return true;
+}
+function parseSuccessConclusions(successConclusions) {
+    const regex = /^(success|failure|neutral|cancelled|skipped|timed_out|action_required)(\|(success|failure|neutral|cancelled|skipped|timed_out|action_required))*$/;
+    if (!regex.test(successConclusions)) {
+        core.setFailed("Invalid 'successConclusions'. It must be a pipe-separated non-empty subset of the options 'success|failure|neutral|cancelled|skipped|timed_out|action_required'");
+        return undefined;
+    }
+    return successConclusions.split('|');
 }
 run();
 

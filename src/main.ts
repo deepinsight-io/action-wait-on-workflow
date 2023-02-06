@@ -1,12 +1,11 @@
 import * as core from '@actions/core'
 import {context, getOctokit} from '@actions/github'
-import {SharedOptions} from './options'
 import {pollChecks} from './poll.check'
 import {pollWorkflows} from './poll.workflow'
 
 async function run(): Promise<void> {
   try {
-    const inputs: SharedOptions = {
+    const inputs = {
       client: getOctokit(core.getInput('token', {required: true})),
 
       owner: core.getInput('owner') || context.repo.owner,
@@ -16,7 +15,7 @@ async function run(): Promise<void> {
       intervalSeconds: parseInt(core.getInput('intervalSeconds') || '10'),
       warmupSeconds: parseInt(core.getInput('warmupSeconds') || '10'),
 
-      log: msg => core.info(msg),
+      log: (msg: string) => core.info(msg),
     }
 
     const checkName = core.getInput('checkName')
@@ -25,11 +24,16 @@ async function run(): Promise<void> {
       return
     }
 
+    const successConclusions = parseSuccessConclusions(core.getInput('successConclusions'))
+    if (successConclusions === undefined) {
+      return
+    }
+
     if (checkName !== '') {
-      const result = await pollChecks({...inputs, checkName})
+      const result = await pollChecks({...inputs, checkName, successConclusions})
       core.setOutput('conclusion', result)
     } else {
-      const result = await pollWorkflows({...inputs, workflowName})
+      const result = await pollWorkflows({...inputs, workflowName, successConclusions})
       core.setOutput('conclusion', result)
     }
   } catch (error) {
@@ -49,5 +53,17 @@ function areCheckNameAndWorkflowNameValid(checkName: string, workflowName: strin
     return false
   }
   return true
+}
+function parseSuccessConclusions(successConclusions: string): string[] | undefined {
+  const regex =
+    /^(success|failure|neutral|cancelled|skipped|timed_out|action_required)(\|(success|failure|neutral|cancelled|skipped|timed_out|action_required))*$/
+  if (!regex.test(successConclusions)) {
+    core.setFailed(
+      "Invalid 'successConclusions'. It must be a pipe-separated non-empty subset of the options 'success|failure|neutral|cancelled|skipped|timed_out|action_required'"
+    )
+    return undefined
+  }
+
+  return successConclusions.split('|')
 }
 run()
