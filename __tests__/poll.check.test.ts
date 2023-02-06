@@ -107,7 +107,7 @@ test(`returns 'timed_out' if exceeding deadline`, async () => {
   expect(result).toBe('timed_out')
 })
 
-test(`returns 'not_found' if not found in warmup`, async () => {
+test(`returns 'not_found' if check not found in warmup`, async () => {
   client.rest.checks.listForRef.mockResolvedValue({
     data: {
       check_runs: [],

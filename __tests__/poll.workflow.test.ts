@@ -2,22 +2,9 @@ import {pollWorkflows as poll} from '../src/poll.workflow'
 import type {components} from '@octokit/openapi-types'
 import {WorkflowOptions} from '../src/options'
 type WorkflowRun = components['schemas']['workflow-run'] & {
-  status:
-    | null
-    | 'completed'
-    | 'action_required'
-    | 'cancelled'
-    | 'failure'
-    | 'neutral'
-    | 'skipped'
-    | 'stale'
-    | 'success'
-    | 'timed_out'
-    | 'in_progress'
-    | 'queued'
-    | 'requested'
-    | 'waiting'
-  conclusion: null | 'success' | 'failure' // not double checked; couldn't find spec
+  // I'm not 100% sure of the exhaustiveness of this lists as I can't find the spec, but for check-runs this is copied from the spec
+  status: null | 'queued' | 'in_progress' | 'completed'
+  conclusion: null | 'success' | 'failure' | 'neutral' | 'cancelled' | 'skipped' | 'timed_out' | 'action_required'
 }
 
 const client = {
