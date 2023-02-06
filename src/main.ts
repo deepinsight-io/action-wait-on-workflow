@@ -17,7 +17,7 @@ async function run(): Promise<void> {
       intervalSeconds: parseInt(core.getInput('intervalSeconds') || '10'),
       warmupSeconds: parseInt(core.getInput('warmupSeconds') || '10'),
 
-      log: (msg: string) => core.info(msg),
+      log: msg => core.info(msg),
     }
 
     const checkName = core.getInput('checkName')
@@ -57,5 +57,4 @@ function areCheckNameAndWorkflowNameValid(checkName: string, workflowName: strin
   }
   return true
 }
-
 run()

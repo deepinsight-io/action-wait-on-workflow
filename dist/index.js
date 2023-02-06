@@ -56,7 +56,7 @@ function run() {
                 timeoutSeconds: parseInt(core.getInput('timeoutSeconds') || '600'),
                 intervalSeconds: parseInt(core.getInput('intervalSeconds') || '10'),
                 warmupSeconds: parseInt(core.getInput('warmupSeconds') || '10'),
-                log: (msg) => core.info(msg),
+                log: msg => core.info(msg),
             };
             const checkName = core.getInput('checkName');
             const workflowName = core.getInput('workflowName');
