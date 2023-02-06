@@ -10,7 +10,6 @@ export interface SharedOptions {
   owner: string
   repo: string
   ref: string
-  successConclusions: string[]
 }
 
 export interface CheckOptions extends SharedOptions {

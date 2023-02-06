@@ -1,11 +1,12 @@
 import * as core from '@actions/core'
 import {context, getOctokit} from '@actions/github'
+import {SharedOptions} from './options'
 import {pollChecks} from './poll.check'
 import {pollWorkflows} from './poll.workflow'
 
 async function run(): Promise<void> {
   try {
-    const inputs = {
+    const inputs: SharedOptions = {
       client: getOctokit(core.getInput('token', {required: true})),
 
       owner: core.getInput('owner') || context.repo.owner,
@@ -29,12 +30,15 @@ async function run(): Promise<void> {
       return
     }
 
+    let conclusion: string
     if (checkName !== '') {
-      const result = await pollChecks({...inputs, checkName, successConclusions})
-      core.setOutput('conclusion', result)
+      conclusion = await pollChecks({...inputs, checkName})
     } else {
-      const result = await pollWorkflows({...inputs, workflowName, successConclusions})
-      core.setOutput('conclusion', result)
+      conclusion = await pollWorkflows({...inputs, workflowName})
+    }
+    core.setOutput('conclusion', conclusion)
+    if (successConclusions.includes(conclusion)) {
+      core.setFailed(`Conclusion '${conclusion}' was not defined as a success'`)
     }
   } catch (error) {
     core.setFailed(error instanceof Error ? error : JSON.stringify(error))

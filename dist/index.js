@@ -66,13 +66,16 @@ function run() {
             if (successConclusions === undefined) {
                 return;
             }
+            let conclusion;
             if (checkName !== '') {
-                const result = yield (0, poll_check_1.pollChecks)(Object.assign(Object.assign({}, inputs), { checkName, successConclusions }));
-                core.setOutput('conclusion', result);
+                conclusion = yield (0, poll_check_1.pollChecks)(Object.assign(Object.assign({}, inputs), { checkName }));
             }
             else {
-                const result = yield (0, poll_workflow_1.pollWorkflows)(Object.assign(Object.assign({}, inputs), { workflowName, successConclusions }));
-                core.setOutput('conclusion', result);
+                conclusion = yield (0, poll_workflow_1.pollWorkflows)(Object.assign(Object.assign({}, inputs), { workflowName }));
+            }
+            core.setOutput('conclusion', conclusion);
+            if (successConclusions.includes(conclusion)) {
+                core.setFailed(`Conclusion '${conclusion}' was not defined as a success'`);
             }
         }
         catch (error) {

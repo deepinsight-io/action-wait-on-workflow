@@ -19,7 +19,6 @@ const run = () =>
     timeoutSeconds: 3,
     intervalSeconds: 0.1,
     warmupSeconds: 1,
-    successConclusions: ['success', 'skipped'],
   })
 
 test('returns conclusion of last (completed) check', async () => {
