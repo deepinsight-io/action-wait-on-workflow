@@ -47,6 +47,12 @@ function run() {
     var _a;
     return __awaiter(this, void 0, void 0, function* () {
         try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const sc = core.getInput('success_conclusions');
+            core.info(sc);
+            core.info(typeof sc);
+            core.info(typeof sc === 'string' ? 'true' : 'false');
+            core.info(`success_conclusions instanceof String: ${sc instanceof String}`);
             const inputs = {
                 client: (0, github_1.getOctokit)(core.getInput('token', { required: true })),
                 owner: core.getInput('owner') || github_1.context.repo.owner,
