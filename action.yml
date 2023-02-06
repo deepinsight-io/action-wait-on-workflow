@@ -28,7 +28,7 @@ inputs:
     default: '10'
   warmupSeconds:
     description: 'The number of seconds to poll until a check should be found'
-    default: '10'
+    default: '0'
 runs:
   using: 'node16'
   main: 'dist/index.js'
