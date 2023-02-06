@@ -71,7 +71,7 @@ function run() {
                 : yield (0, poll_workflow_1.pollWorkflows)(Object.assign(Object.assign({}, inputs), { workflowName }));
             core.setOutput('conclusion', conclusion);
             if (successConclusions.includes(conclusion)) {
-                core.setFailed(`Conclusion '${conclusion}' was not defined as a success'`);
+                core.setFailed(`Conclusion '${conclusion}' was not defined as a success`);
             }
         }
         catch (error) {
@@ -98,7 +98,9 @@ function parseSuccessConclusions(successConclusions) {
         core.setFailed("Invalid 'successConclusions'. It must be a pipe-separated non-empty subset of the options 'success|failure|neutral|cancelled|skipped|timed_out|action_required'");
         return undefined;
     }
-    return successConclusions.split('|');
+    const result = successConclusions.split('|');
+    core.debug(`successConclusions.split('|'): ${JSON.stringify(result)}`);
+    return result;
 }
 run();
 

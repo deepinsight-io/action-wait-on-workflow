@@ -36,7 +36,7 @@ async function run(): Promise<void> {
         : await pollWorkflows({...inputs, workflowName})
     core.setOutput('conclusion', conclusion)
     if (successConclusions.includes(conclusion)) {
-      core.setFailed(`Conclusion '${conclusion}' was not defined as a success'`)
+      core.setFailed(`Conclusion '${conclusion}' was not defined as a success`)
     }
   } catch (error) {
     core.setFailed(error instanceof Error ? error : JSON.stringify(error))
@@ -65,7 +65,8 @@ function parseSuccessConclusions(successConclusions: string): string[] | undefin
     )
     return undefined
   }
-
-  return successConclusions.split('|')
+  const result = successConclusions.split('|')
+  core.debug(`successConclusions.split('|'): ${JSON.stringify(result)}`)
+  return result
 }
 run()
