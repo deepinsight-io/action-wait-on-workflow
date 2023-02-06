@@ -36,7 +36,7 @@ async function run(): Promise<void> {
         ? await pollChecks({...inputs, checkName})
         : await pollWorkflows({...inputs, workflowName})
     core.setOutput('conclusion', conclusion)
-    if (successConclusions.includes(conclusion)) {
+    if (!successConclusions.includes(conclusion)) {
       core.setFailed(`Conclusion '${conclusion}' was not defined as a success`)
     }
   } catch (error) {
