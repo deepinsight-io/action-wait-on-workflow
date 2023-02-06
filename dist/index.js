@@ -116,14 +116,14 @@ class CheckPoller {
     func(options) {
         return __awaiter(this, void 0, void 0, function* () {
             const { client, log, checkName, intervalSeconds, owner, repo, ref } = options;
-            log(`Retrieving check runs named ${checkName} on ${owner}/${repo}@${ref}...`);
+            log(`Retrieving check runs named '${checkName}' on ${owner}/${repo}@${ref}...`);
             const result = yield client.rest.checks.listForRef({
                 check_name: checkName,
                 owner,
                 repo,
                 ref,
             });
-            log(`Retrieved ${result.data.check_runs.length} check runs named ${checkName}`);
+            log(`Retrieved ${result.data.check_runs.length} check runs named '${checkName}'`);
             const lastStartedCheck = this.getLastStartedCheck(result.data.check_runs);
             if (lastStartedCheck !== undefined && lastStartedCheck.status === 'completed') {
                 log(`Found a completed check with id ${lastStartedCheck.id} and conclusion ${lastStartedCheck.conclusion}`);
@@ -131,7 +131,7 @@ class CheckPoller {
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 return lastStartedCheck.conclusion;
             }
-            log(`No completed checks named ${checkName}, waiting for ${intervalSeconds} seconds...`);
+            log(`No completed checks named '${checkName}', waiting for ${intervalSeconds} seconds...`);
             log('');
             return lastStartedCheck === undefined ? undefined : null;
         });

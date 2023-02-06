@@ -8,14 +8,14 @@ class CheckPoller implements Poller<Options> {
   public async func(options: Options): Promise<string | undefined | null> {
     const {client, log, checkName, intervalSeconds, owner, repo, ref} = options
 
-    log(`Retrieving check runs named ${checkName} on ${owner}/${repo}@${ref}...`)
+    log(`Retrieving check runs named '${checkName}' on ${owner}/${repo}@${ref}...`)
     const result = await client.rest.checks.listForRef({
       check_name: checkName,
       owner,
       repo,
       ref,
     })
-    log(`Retrieved ${result.data.check_runs.length} check runs named ${checkName}`)
+    log(`Retrieved ${result.data.check_runs.length} check runs named '${checkName}'`)
 
     const lastStartedCheck = this.getLastStartedCheck(result.data.check_runs)
     if (lastStartedCheck !== undefined && lastStartedCheck.status === 'completed') {
@@ -25,7 +25,7 @@ class CheckPoller implements Poller<Options> {
       return lastStartedCheck.conclusion!
     }
 
-    log(`No completed checks named ${checkName}, waiting for ${intervalSeconds} seconds...`)
+    log(`No completed checks named '${checkName}', waiting for ${intervalSeconds} seconds...`)
     log('')
     return lastStartedCheck === undefined ? undefined : null
   }
