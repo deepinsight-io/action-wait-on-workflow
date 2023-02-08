@@ -44,8 +44,9 @@ class WorkflowPoller implements Poller<Options> {
     }
     log(`${workflowRuns.length} workflow runs with name '${workflowName}' have been found`)
     const latestWorkflowRun = maxBy(workflowRuns, run => (run.run_attempt === undefined ? -1 : run.run_attempt))
+    const conclusionLog = latestWorkflowRun.conclusion !== null ? ` (conlusion='${latestWorkflowRun.conclusion}')` : ''
     log(
-      `The highest run_attempt is ${latestWorkflowRun.run_attempt} (id=${latestWorkflowRun.id}) with status '${latestWorkflowRun.status}'`
+      `The highest run_attempt is ${latestWorkflowRun.run_attempt} (id=${latestWorkflowRun.id}) with status '${latestWorkflowRun.status}'${conclusionLog}`
     )
     return latestWorkflowRun
   }
