@@ -1,5 +1,9 @@
 import * as actionsCore from '@actions/core'
 
+export type GHStatus = 'queued' | 'in_progress' | 'completed'
+export type GHConclusion = 'success' | 'failure' | 'neutral' | 'cancelled' | 'skipped' | 'timed_out' | 'action_required'
+export type Conclusion = GHConclusion | 'not_found'
+
 export function maxBy<T>(array: T[], selector: (element: T) => number): T {
   if (array.length === 0) {
     throw new Error('Array empty')

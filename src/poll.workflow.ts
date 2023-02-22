@@ -1,4 +1,5 @@
 import type {components} from '@octokit/openapi-types'
+import type {Conclusion, GHConclusion} from './utils'
 import {WorkflowOptions as Options} from './options'
 import {maxBy} from './utils'
 import {poll, Poller} from './poll'
@@ -6,13 +7,13 @@ import {poll, Poller} from './poll'
 type WorkflowRun = components['schemas']['workflow-run']
 
 class WorkflowPoller implements Poller<Options> {
-  public async func(options: Options): Promise<string | null | undefined> {
+  public async func(options: Options): Promise<GHConclusion | null | undefined> {
     const workflow = await this.getLatestWorkflowRunId(options)
     options.log('')
     if (workflow === undefined) {
       return undefined
     }
-    return workflow.conclusion || null
+    return (workflow.conclusion as GHConclusion) || null
   }
   private async getWorkflowRuns(options: Options): Promise<WorkflowRun[]> {
     const {client, log, owner, repo, ref: head_sha, workflowName} = options
@@ -50,7 +51,7 @@ class WorkflowPoller implements Poller<Options> {
     )
     return latestWorkflowRun
   }
-  public onTimedOut(options: Options, warmupDeadlined: boolean): string {
+  public onTimedOut(options: Options, warmupDeadlined: boolean): 'not_found' | 'timed_out' {
     const {log, timeoutSeconds, warmupSeconds} = options
     if (warmupDeadlined) {
       log(`No workflow runs found after ${warmupSeconds} seconds, exiting with conclusion 'not_found'`)
@@ -62,7 +63,6 @@ class WorkflowPoller implements Poller<Options> {
   }
 }
 
-export async function pollWorkflowrun(options: Options): Promise<string> {
-  // returns 'success' | 'already_running' | 'not_found'
+export async function pollWorkflowrun(options: Options): Promise<Conclusion> {
   return poll(options, new WorkflowPoller())
 }

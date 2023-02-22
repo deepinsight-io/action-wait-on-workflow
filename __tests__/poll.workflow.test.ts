@@ -1,10 +1,11 @@
 import {pollWorkflowrun as poll} from '../src/poll.workflow'
 import type {components} from '@octokit/openapi-types'
 import {WorkflowOptions} from '../src/options'
+import {GHConclusion, GHStatus} from '../src/utils'
 type WorkflowRun = components['schemas']['workflow-run'] & {
   // I'm not 100% sure of the exhaustiveness of this lists as I can't find the spec, but for check-runs this is copied from the spec
-  status: null | 'queued' | 'in_progress' | 'completed'
-  conclusion: null | 'success' | 'failure' | 'neutral' | 'cancelled' | 'skipped' | 'timed_out' | 'action_required'
+  status: null | GHStatus
+  conclusion: null | GHConclusion
 }
 
 const client = {

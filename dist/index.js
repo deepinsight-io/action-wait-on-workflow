@@ -295,7 +295,6 @@ class WorkflowPoller {
 }
 function pollWorkflowrun(options) {
     return __awaiter(this, void 0, void 0, function* () {
-        // returns 'success' | 'already_running' | 'not_found'
         return (0, poll_1.poll)(options, new WorkflowPoller());
     });
 }

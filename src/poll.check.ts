@@ -1,11 +1,11 @@
-import {maxBy} from './utils'
+import {Conclusion, maxBy} from './utils'
 import type {components} from '@octokit/openapi-types'
 import type {CheckOptions as Options} from './options'
 import {poll, Poller} from './poll'
 type CheckRun = components['schemas']['check-run']
 
 class CheckPoller implements Poller<Options> {
-  public async func(options: Options): Promise<string | undefined | null> {
+  public async func(options: Options): Promise<Conclusion | undefined | null> {
     const {client, log, checkName, intervalSeconds, owner, repo, ref} = options
 
     log(`Retrieving check runs named '${checkName}' on ${owner}/${repo}@${ref}...`)
@@ -29,7 +29,7 @@ class CheckPoller implements Poller<Options> {
     log('')
     return lastStartedCheck === undefined ? undefined : null
   }
-  public onTimedOut(options: Options, warmupDeadlined: boolean): string {
+  public onTimedOut(options: Options, warmupDeadlined: boolean): Conclusion {
     const {log, timeoutSeconds, warmupSeconds} = options
     if (warmupDeadlined) {
       log(`No checks found after ${warmupSeconds} seconds, exiting with conclusion 'not_found'`)
@@ -50,6 +50,6 @@ class CheckPoller implements Poller<Options> {
   }
 }
 
-export async function pollCheckrun(options: Options): Promise<string> {
+export async function pollCheckrun(options: Options): Promise<Conclusion> {
   return await poll(options, new CheckPoller())
 }
