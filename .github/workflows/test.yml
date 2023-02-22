@@ -26,12 +26,9 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           checkName: build
+          successConclusions: success
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      - name: Fail if build did not succeed
-        if: steps.wait-for-build.outputs.conclusion != 'success'
-        run: exit 1
-  
   ensure-npm-ran-pack: # make sure the js is compiled
     runs-on: ubuntu-latest
     steps:
