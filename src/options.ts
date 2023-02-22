@@ -3,6 +3,7 @@ import {GitHub} from '@actions/github/lib/utils'
 export interface SharedOptions {
   client: InstanceType<typeof GitHub>
   log: (message: string) => void
+  warn: (message: string) => void
 
   timeoutSeconds: number
   intervalSeconds: number
@@ -10,6 +11,7 @@ export interface SharedOptions {
   owner: string
   repo: string
   ref: string
+  successConclusions: string[]
 }
 
 export interface CheckOptions extends SharedOptions {
@@ -18,4 +20,7 @@ export interface CheckOptions extends SharedOptions {
 
 export interface WorkflowOptions extends SharedOptions {
   workflowName: string
+}
+export interface WorkflowsOptions extends SharedOptions {
+  workflowNames: string[]
 }

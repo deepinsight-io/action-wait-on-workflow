@@ -1,12 +1,25 @@
 import * as core from '@actions/core'
 import {context, getOctokit} from '@actions/github'
 import {SharedOptions} from './options'
-import {pollChecks} from './poll.check'
-import {pollWorkflows} from './poll.workflow'
-import {parseSuccessConclusions} from './utils'
+import {pollCheckrun} from './poll.check'
+import {pollWorkflowruns} from './poll.workflow'
+import {parseSuccessConclusions, stringToList} from './utils'
 
 async function run(): Promise<void> {
   try {
+    const checkName = core.getInput('checkName')
+    const workflowName = core.getInput('workflowName')
+    if (!areCheckNameAndWorkflowNameValid(checkName, workflowName)) {
+      return
+    }
+
+    const workflowNames = stringToList(workflowName, 'workflowName')
+
+    const successConclusions = parseSuccessConclusions(core.getInput('successConclusions'), core)
+    if (successConclusions === undefined) {
+      return
+    }
+
     const inputs: SharedOptions = {
       client: getOctokit(core.getInput('token', {required: true})),
 
@@ -16,25 +29,16 @@ async function run(): Promise<void> {
       timeoutSeconds: parseInt(core.getInput('timeoutSeconds')),
       intervalSeconds: parseInt(core.getInput('intervalSeconds')),
       warmupSeconds: parseInt(core.getInput('warmupSeconds')),
+      successConclusions,
 
       log: msg => core.info(msg),
-    }
-
-    const checkName = core.getInput('checkName')
-    const workflowName = core.getInput('workflowName')
-    if (!areCheckNameAndWorkflowNameValid(checkName, workflowName)) {
-      return
-    }
-
-    const successConclusions = parseSuccessConclusions(core.getInput('successConclusions'), core)
-    if (successConclusions === undefined) {
-      return
+      warn: msg => core.warning(msg),
     }
 
     const conclusion =
       checkName !== '' //
-        ? await pollChecks({...inputs, checkName})
-        : await pollWorkflows({...inputs, workflowName})
+        ? await pollCheckrun({...inputs, checkName})
+        : await pollWorkflowruns({...inputs, workflowNames})
     core.setOutput('conclusion', conclusion)
     if (!successConclusions.includes(conclusion)) {
       core.setFailed(`Conclusion '${conclusion}' was not defined as a success`)

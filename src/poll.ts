@@ -1,18 +1,19 @@
 import {wait} from './wait'
 import {SharedOptions} from './options'
+import type {Conclusion} from './utils'
 
 export interface Poller<TOptions> {
   /*
   @returns: undefined if nothing has been found, null if something has been found but it doesn't meet the criteria.
             otherwise a string with the result
   */
-  func: (options: TOptions) => Promise<string | undefined | null>
-  onTimedOut: (options: TOptions, warmupDeadlined: boolean) => string
+  func: (options: TOptions) => Promise<Conclusion | undefined | null>
+  onTimedOut: (options: TOptions, warmupDeadlined: boolean) => Conclusion
 }
 
 export async function poll<
   TOptions extends Pick<SharedOptions, 'timeoutSeconds' | 'intervalSeconds' | 'warmupSeconds'>
->(options: TOptions, poller: Poller<TOptions>): Promise<string> {
+>(options: TOptions, poller: Poller<TOptions>): Promise<Conclusion> {
   const {timeoutSeconds, intervalSeconds, warmupSeconds} = options
 
   const start = new Date().getTime()

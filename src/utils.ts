@@ -1,5 +1,52 @@
 import * as actionsCore from '@actions/core'
 
+// I'm not 100% sure of the exhaustiveness of this lists as I can't find the spec, but for check-runs this is copied from the spec
+export type GHStatus = 'queued' | 'in_progress' | 'completed'
+export type GHConclusion = 'success' | 'failure' | 'neutral' | 'cancelled' | 'skipped' | 'timed_out' | 'action_required'
+export type Conclusion = GHConclusion | 'not_found'
+
+export function isConclusion(s: string | null, warn: (message: string) => void): s is Conclusion | null {
+  switch (s) {
+    case null:
+    case 'success':
+    case 'failure':
+    case 'neutral':
+    case 'cancelled':
+    case 'skipped':
+    case 'timed_out':
+    case 'action_required':
+    case 'not_found':
+      return true
+    default:
+      warn(
+        `Conclusion '${s}' was not in the api spec list: [success, failure, neutral, cancelled, skipped, timed_out, action_required] + [not_found]`
+      )
+      return false
+  }
+}
+export function asConclusion(s: string | null, warn: (message: string) => void): Conclusion | null {
+  if (isConclusion(s, warn)) {
+    return s
+  } else {
+    return s as Conclusion // we could error, but a warning is given and suffices
+  }
+}
+export function summarizeConclusions(conclusions: Conclusion[]): Conclusion {
+  const inOrderOfPriority: Conclusion[] = [
+    'timed_out',
+    'cancelled',
+    'failure',
+    'action_required',
+    'skipped',
+    'neutral',
+    'not_found',
+    'success',
+  ]
+  for (const priority of inOrderOfPriority) {
+    if (conclusions.includes(priority)) return priority
+  }
+  return 'success'
+}
 export function maxBy<T>(array: T[], selector: (element: T) => number): T {
   if (array.length === 0) {
     throw new Error('Array empty')
@@ -28,5 +75,24 @@ export function parseSuccessConclusions(successConclusions: string, core: typeof
   }
   const result = successConclusions.split('|')
   core.debug(`successConclusions.split('|'): ${JSON.stringify(result)}`)
+  return result
+}
+
+export function stringToList(list: string, inputName: 'workflowName' | 'checkName'): string[] {
+  // parses a newline-separated list, or a comma-separated list between block parentheses
+
+  const trimmed = list.trim()
+  let entries: string[]
+  if (trimmed.startsWith('[')) {
+    if (!trimmed.endsWith(']')) {
+      throw new Error(`Invalid list format for '${inputName}'`)
+    }
+
+    const withoutBlockParens = trimmed.substring(1, trimmed.length - 2)
+    entries = withoutBlockParens.split(',')
+  } else {
+    entries = trimmed.split('\n')
+  }
+  const result = entries.map(entry => entry.trim()).filter(entry => entry !== '')
   return result
 }

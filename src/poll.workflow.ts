@@ -1,18 +1,19 @@
 import type {components} from '@octokit/openapi-types'
-import {WorkflowOptions as Options} from './options'
-import {maxBy} from './utils'
+import type {Conclusion} from './utils'
+import {WorkflowOptions as Options, WorkflowsOptions} from './options'
 import {poll, Poller} from './poll'
+import {asConclusion, maxBy, summarizeConclusions} from './utils'
 
 type WorkflowRun = components['schemas']['workflow-run']
 
 class WorkflowPoller implements Poller<Options> {
-  public async func(options: Options): Promise<string | null | undefined> {
+  public async func(options: Options): Promise<Conclusion | null | undefined> {
     const workflow = await this.getLatestWorkflowRunId(options)
     options.log('')
     if (workflow === undefined) {
       return undefined
     }
-    return workflow.conclusion || null
+    return asConclusion(workflow.conclusion, options.warn) || null
   }
   private async getWorkflowRuns(options: Options): Promise<WorkflowRun[]> {
     const {client, log, owner, repo, ref: head_sha, workflowName} = options
@@ -50,7 +51,7 @@ class WorkflowPoller implements Poller<Options> {
     )
     return latestWorkflowRun
   }
-  public onTimedOut(options: Options, warmupDeadlined: boolean): string {
+  public onTimedOut(options: Options, warmupDeadlined: boolean): 'not_found' | 'timed_out' {
     const {log, timeoutSeconds, warmupSeconds} = options
     if (warmupDeadlined) {
       log(`No workflow runs found after ${warmupSeconds} seconds, exiting with conclusion 'not_found'`)
@@ -62,7 +63,27 @@ class WorkflowPoller implements Poller<Options> {
   }
 }
 
-export async function pollWorkflows(options: Options): Promise<string> {
-  // returns 'success' | 'already_running' | 'not_found'
+export async function pollWorkflowrun(options: Options): Promise<Conclusion> {
   return poll(options, new WorkflowPoller())
+}
+
+export async function pollWorkflowruns(options: WorkflowsOptions): Promise<Conclusion> {
+  if (options.workflowNames.length === 0) {
+    throw new Error('options.workflowNames.length === 0')
+  }
+
+  const conclusions: Conclusion[] = []
+  let i = 0
+  for (const workflowName of options.workflowNames) {
+    options.log(`[Workflow ${i}/${options.workflowNames.length}] ---------------------`)
+
+    const conclusion = await pollWorkflowrun({...options, workflowName})
+    if (!options.successConclusions.includes(conclusion)) {
+      return conclusion
+    }
+    conclusions.push(conclusion)
+    i++
+  }
+  const result = summarizeConclusions(conclusions)
+  return result
 }
