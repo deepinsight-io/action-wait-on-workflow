@@ -26,8 +26,8 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           checkName: build
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           successConclusions: success
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
   ensure-npm-ran-pack: # make sure the js is compiled
     runs-on: ubuntu-latest
