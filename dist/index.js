@@ -313,9 +313,12 @@ function pollWorkflowruns(options) {
             options.log(`[Workflow ${i}/${options.workflowNames.length}] ---------------------`);
             const conclusion = yield pollWorkflowrun(Object.assign(Object.assign({}, options), { workflowName }));
             if (!options.successConclusions.includes(conclusion)) {
+                // TODO: we could be smart and in case of a not_found revisit that workflow later
+                // As workaround the workflowNames can be provided in execution order
                 return conclusion;
             }
             conclusions.push(conclusion);
+            options.warmupSeconds = 0; // only the first workflow should have a warmup
             i++;
         }
         const result = (0, utils_1.summarizeConclusions)(conclusions);

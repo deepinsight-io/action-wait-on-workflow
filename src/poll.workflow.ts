@@ -79,9 +79,12 @@ export async function pollWorkflowruns(options: WorkflowsOptions): Promise<Concl
 
     const conclusion = await pollWorkflowrun({...options, workflowName})
     if (!options.successConclusions.includes(conclusion)) {
+      // TODO: we could be smart and in case of a not_found revisit that workflow later
+      // As workaround the workflowNames can be provided in execution order
       return conclusion
     }
     conclusions.push(conclusion)
+    options.warmupSeconds = 0 // only the first workflow should have a warmup
     i++
   }
   const result = summarizeConclusions(conclusions)
