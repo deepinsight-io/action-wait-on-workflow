@@ -310,7 +310,7 @@ function pollWorkflowruns(options) {
         const conclusions = [];
         let i = 0;
         for (const workflowName of options.workflowNames) {
-            options.log(`[${i}/${options.workflowNames.length}] Polling '${workflowName}'..`);
+            options.log(`[Workflow ${i}/${options.workflowNames.length}] ---------------------`);
             const conclusion = yield pollWorkflowrun(Object.assign(Object.assign({}, options), { workflowName }));
             if (!options.successConclusions.includes(conclusion)) {
                 return conclusion;
