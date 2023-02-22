@@ -57,6 +57,7 @@ function run() {
                 intervalSeconds: parseInt(core.getInput('intervalSeconds')),
                 warmupSeconds: parseInt(core.getInput('warmupSeconds')),
                 log: msg => core.info(msg),
+                warn: msg => core.warning(msg),
             };
             const checkName = core.getInput('checkName');
             const workflowName = core.getInput('workflowName');
@@ -232,8 +233,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.pollWorkflowrun = void 0;
-const utils_1 = __nccwpck_require__(918);
 const poll_1 = __nccwpck_require__(5498);
+const utils_1 = __nccwpck_require__(918);
 class WorkflowPoller {
     func(options) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -242,7 +243,7 @@ class WorkflowPoller {
             if (workflow === undefined) {
                 return undefined;
             }
-            return workflow.conclusion || null;
+            return (0, utils_1.asConclusion)(workflow.conclusion, options.warn) || null;
         });
     }
     getWorkflowRuns(options) {
@@ -309,7 +310,34 @@ exports.pollWorkflowrun = pollWorkflowrun;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.parseSuccessConclusions = exports.maxBy = void 0;
+exports.parseSuccessConclusions = exports.maxBy = exports.asConclusion = exports.isConclusion = void 0;
+function isConclusion(s, warn) {
+    switch (s) {
+        case null:
+        case 'success':
+        case 'failure':
+        case 'neutral':
+        case 'cancelled':
+        case 'skipped':
+        case 'timed_out':
+        case 'action_required':
+        case 'not_found':
+            return true;
+        default:
+            warn(`Conclusion '${s}' was not in the api spec list: [success, failure, neutral, cancelled, skipped, timed_out, action_required] + [not_found]`);
+            return false;
+    }
+}
+exports.isConclusion = isConclusion;
+function asConclusion(s, warn) {
+    if (isConclusion(s, warn)) {
+        return s;
+    }
+    else {
+        return s; // we could error, but a warning is given and suffices
+    }
+}
+exports.asConclusion = asConclusion;
 function maxBy(array, selector) {
     if (array.length === 0) {
         throw new Error('Array empty');

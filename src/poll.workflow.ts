@@ -1,19 +1,19 @@
 import type {components} from '@octokit/openapi-types'
-import type {Conclusion, GHConclusion} from './utils'
+import type {Conclusion} from './utils'
 import {WorkflowOptions as Options} from './options'
-import {maxBy} from './utils'
 import {poll, Poller} from './poll'
+import {asConclusion, maxBy} from './utils'
 
 type WorkflowRun = components['schemas']['workflow-run']
 
 class WorkflowPoller implements Poller<Options> {
-  public async func(options: Options): Promise<GHConclusion | null | undefined> {
+  public async func(options: Options): Promise<Conclusion | null | undefined> {
     const workflow = await this.getLatestWorkflowRunId(options)
     options.log('')
     if (workflow === undefined) {
       return undefined
     }
-    return (workflow.conclusion as GHConclusion) || null
+    return asConclusion(workflow.conclusion, options.warn) || null
   }
   private async getWorkflowRuns(options: Options): Promise<WorkflowRun[]> {
     const {client, log, owner, repo, ref: head_sha, workflowName} = options

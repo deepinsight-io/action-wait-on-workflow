@@ -12,6 +12,7 @@ const run = () =>
   poll({
     client: client as any,
     log: () => {},
+    warn: () => {},
     checkName: 'test',
     owner: 'testOrg',
     repo: 'testRepo',

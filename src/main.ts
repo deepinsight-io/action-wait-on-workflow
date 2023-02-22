@@ -18,6 +18,7 @@ async function run(): Promise<void> {
       warmupSeconds: parseInt(core.getInput('warmupSeconds')),
 
       log: msg => core.info(msg),
+      warn: msg => core.warning(msg),
     }
 
     const checkName = core.getInput('checkName')

@@ -3,6 +3,7 @@ import {GitHub} from '@actions/github/lib/utils'
 export interface SharedOptions {
   client: InstanceType<typeof GitHub>
   log: (message: string) => void
+  warn: (message: string) => void
 
   timeoutSeconds: number
   intervalSeconds: number

@@ -3,7 +3,6 @@ import type {components} from '@octokit/openapi-types'
 import {WorkflowOptions} from '../src/options'
 import {GHConclusion, GHStatus} from '../src/utils'
 type WorkflowRun = components['schemas']['workflow-run'] & {
-  // I'm not 100% sure of the exhaustiveness of this lists as I can't find the spec, but for check-runs this is copied from the spec
   status: null | GHStatus
   conclusion: null | GHConclusion
 }
@@ -16,6 +15,7 @@ function run({workflowName}: {workflowName: WorkflowOptions['workflowName']} = {
   return poll({
     client: client as any,
     log: () => {},
+    warn: () => {},
     workflowName,
     owner: 'testOrg',
     repo: 'testRepo',
