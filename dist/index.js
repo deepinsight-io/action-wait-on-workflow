@@ -318,6 +318,7 @@ function pollWorkflowruns(options) {
                 return conclusion;
             }
             conclusions.push(conclusion);
+            options.warmupSeconds = 0; // only the first workflow should have a warmup
             i++;
         }
         const result = (0, utils_1.summarizeConclusions)(conclusions);

@@ -84,6 +84,7 @@ export async function pollWorkflowruns(options: WorkflowsOptions): Promise<Concl
       return conclusion
     }
     conclusions.push(conclusion)
+    options.warmupSeconds = 0 // only the first workflow should have a warmup
     i++
   }
   const result = summarizeConclusions(conclusions)
