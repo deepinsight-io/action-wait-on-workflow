@@ -9,14 +9,14 @@ inputs:
     description: 'The GitHub token to use for making API requests.'
     required: true
   checkName:
-    description: 'The name of the GitHub check to wait for. For example, `build` or `deploy`. Either this xor "workflowName" must be provided.'
+    description: 'The name of the GitHub check/workflow to wait for. For example, `build` or `deploy`. Either this xor "workflowName" must be provided.'
   workflowName:
     description: |
        The name of the GitHub workflow to wait for. For example, `build` or `deploy`. Either this xor "checkName" must be provided.
        It can also be a list of workflow names, in the for of a newline-separated list, or comma-separated list between square brackets.
   ref:
     description: |
-      The Git ref of the commit you want to poll for a passing check.
+      The Git ref of the commit you want to poll for a passing check/workflow.
       By default the PR head if present; otherwise the current sha.
   successConclusions:
     description: |
@@ -25,17 +25,17 @@ inputs:
           success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found
     default: "success|skipped|not_found"
   repo:
-    description: 'The name of the GitHub repository you want to poll for a passing check.'
+    description: 'The name of the GitHub repository you want to poll for a passing check/workflow.'
   owner:
-    description: 'The owner of the GitHub repository you want to poll for a passing check.'
+    description: 'The owner of the GitHub repository you want to poll for a passing check/workflow.'
   timeoutSeconds:
-    description: 'The number of seconds to wait for the check to complete.'
+    description: 'The number of seconds to wait for per check/workflow to complete.'
     default: '600'
   intervalSeconds:
     description: 'The number of seconds to wait before each poll of the GitHub API.'
     default: '10'
   warmupSeconds:
-    description: 'The number of seconds to poll until a check should be found'
+    description: 'The number of seconds to poll until a check/workflow should be found'
     default: '0'
 runs:
   using: 'node16'
