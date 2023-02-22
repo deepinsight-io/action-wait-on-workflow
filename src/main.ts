@@ -1,8 +1,8 @@
 import * as core from '@actions/core'
 import {context, getOctokit} from '@actions/github'
 import {SharedOptions} from './options'
-import {pollChecks} from './poll.check'
-import {pollWorkflows} from './poll.workflow'
+import {pollCheckrun} from './poll.check'
+import {pollWorkflowrun} from './poll.workflow'
 import {parseSuccessConclusions} from './utils'
 
 async function run(): Promise<void> {
@@ -33,8 +33,8 @@ async function run(): Promise<void> {
 
     const conclusion =
       checkName !== '' //
-        ? await pollChecks({...inputs, checkName})
-        : await pollWorkflows({...inputs, workflowName})
+        ? await pollCheckrun({...inputs, checkName})
+        : await pollWorkflowrun({...inputs, workflowName})
     core.setOutput('conclusion', conclusion)
     if (!successConclusions.includes(conclusion)) {
       core.setFailed(`Conclusion '${conclusion}' was not defined as a success`)

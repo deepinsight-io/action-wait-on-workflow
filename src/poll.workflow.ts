@@ -62,7 +62,7 @@ class WorkflowPoller implements Poller<Options> {
   }
 }
 
-export async function pollWorkflows(options: Options): Promise<string> {
+export async function pollWorkflowrun(options: Options): Promise<string> {
   // returns 'success' | 'already_running' | 'not_found'
   return poll(options, new WorkflowPoller())
 }

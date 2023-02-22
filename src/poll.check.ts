@@ -50,6 +50,6 @@ class CheckPoller implements Poller<Options> {
   }
 }
 
-export async function pollChecks(options: Options): Promise<string> {
+export async function pollCheckrun(options: Options): Promise<string> {
   return await poll(options, new CheckPoller())
 }

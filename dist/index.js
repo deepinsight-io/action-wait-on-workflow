@@ -68,8 +68,8 @@ function run() {
                 return;
             }
             const conclusion = checkName !== '' //
-                ? yield (0, poll_check_1.pollChecks)(Object.assign(Object.assign({}, inputs), { checkName }))
-                : yield (0, poll_workflow_1.pollWorkflows)(Object.assign(Object.assign({}, inputs), { workflowName }));
+                ? yield (0, poll_check_1.pollCheckrun)(Object.assign(Object.assign({}, inputs), { checkName }))
+                : yield (0, poll_workflow_1.pollWorkflowrun)(Object.assign(Object.assign({}, inputs), { workflowName }));
             core.setOutput('conclusion', conclusion);
             if (!successConclusions.includes(conclusion)) {
                 core.setFailed(`Conclusion '${conclusion}' was not defined as a success`);
@@ -113,7 +113,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.pollChecks = void 0;
+exports.pollCheckrun = void 0;
 const utils_1 = __nccwpck_require__(918);
 const poll_1 = __nccwpck_require__(5498);
 class CheckPoller {
@@ -161,12 +161,12 @@ class CheckPoller {
         });
     }
 }
-function pollChecks(options) {
+function pollCheckrun(options) {
     return __awaiter(this, void 0, void 0, function* () {
         return yield (0, poll_1.poll)(options, new CheckPoller());
     });
 }
-exports.pollChecks = pollChecks;
+exports.pollCheckrun = pollCheckrun;
 
 
 /***/ }),
@@ -231,7 +231,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.pollWorkflows = void 0;
+exports.pollWorkflowrun = void 0;
 const utils_1 = __nccwpck_require__(918);
 const poll_1 = __nccwpck_require__(5498);
 class WorkflowPoller {
@@ -293,13 +293,13 @@ class WorkflowPoller {
         }
     }
 }
-function pollWorkflows(options) {
+function pollWorkflowrun(options) {
     return __awaiter(this, void 0, void 0, function* () {
         // returns 'success' | 'already_running' | 'not_found'
         return (0, poll_1.poll)(options, new WorkflowPoller());
     });
 }
-exports.pollWorkflows = pollWorkflows;
+exports.pollWorkflowrun = pollWorkflowrun;
 
 
 /***/ }),
