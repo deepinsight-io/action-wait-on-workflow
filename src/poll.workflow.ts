@@ -75,7 +75,7 @@ export async function pollWorkflowruns(options: WorkflowsOptions): Promise<Concl
   const conclusions: Conclusion[] = []
   let i = 0
   for (const workflowName of options.workflowNames) {
-    options.log(`[${i}/${options.workflowNames.length}] Polling ${workflowName}..`)
+    options.log(`[${i}/${options.workflowNames.length}] Polling '${workflowName}'..`)
 
     const conclusion = await pollWorkflowrun({...options, workflowName})
     if (!options.successConclusions.includes(conclusion)) {
