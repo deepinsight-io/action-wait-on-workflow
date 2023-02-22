@@ -2,11 +2,24 @@ import * as core from '@actions/core'
 import {context, getOctokit} from '@actions/github'
 import {SharedOptions} from './options'
 import {pollCheckrun} from './poll.check'
-import {pollWorkflowrun} from './poll.workflow'
-import {parseSuccessConclusions} from './utils'
+import {pollWorkflowruns} from './poll.workflow'
+import {parseSuccessConclusions, stringToList} from './utils'
 
 async function run(): Promise<void> {
   try {
+    const checkName = core.getInput('checkName')
+    const workflowName = core.getInput('workflowName')
+    if (!areCheckNameAndWorkflowNameValid(checkName, workflowName)) {
+      return
+    }
+
+    const workflowNames = stringToList(workflowName, 'workflowName')
+
+    const successConclusions = parseSuccessConclusions(core.getInput('successConclusions'), core)
+    if (successConclusions === undefined) {
+      return
+    }
+
     const inputs: SharedOptions = {
       client: getOctokit(core.getInput('token', {required: true})),
 
@@ -16,26 +29,16 @@ async function run(): Promise<void> {
       timeoutSeconds: parseInt(core.getInput('timeoutSeconds')),
       intervalSeconds: parseInt(core.getInput('intervalSeconds')),
       warmupSeconds: parseInt(core.getInput('warmupSeconds')),
+      successConclusions,
 
       log: msg => core.info(msg),
       warn: msg => core.warning(msg),
     }
 
-    const checkName = core.getInput('checkName')
-    const workflowName = core.getInput('workflowName')
-    if (!areCheckNameAndWorkflowNameValid(checkName, workflowName)) {
-      return
-    }
-
-    const successConclusions = parseSuccessConclusions(core.getInput('successConclusions'), core)
-    if (successConclusions === undefined) {
-      return
-    }
-
     const conclusion =
       checkName !== '' //
         ? await pollCheckrun({...inputs, checkName})
-        : await pollWorkflowrun({...inputs, workflowName})
+        : await pollWorkflowruns({...inputs, workflowNames})
     core.setOutput('conclusion', conclusion)
     if (!successConclusions.includes(conclusion)) {
       core.setFailed(`Conclusion '${conclusion}' was not defined as a success`)

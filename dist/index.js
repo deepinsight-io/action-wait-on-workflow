@@ -48,6 +48,16 @@ function run() {
     var _a;
     return __awaiter(this, void 0, void 0, function* () {
         try {
+            const checkName = core.getInput('checkName');
+            const workflowName = core.getInput('workflowName');
+            if (!areCheckNameAndWorkflowNameValid(checkName, workflowName)) {
+                return;
+            }
+            const workflowNames = (0, utils_1.stringToList)(workflowName, 'workflowName');
+            const successConclusions = (0, utils_1.parseSuccessConclusions)(core.getInput('successConclusions'), core);
+            if (successConclusions === undefined) {
+                return;
+            }
             const inputs = {
                 client: (0, github_1.getOctokit)(core.getInput('token', { required: true })),
                 owner: core.getInput('owner') || github_1.context.repo.owner,
@@ -56,21 +66,13 @@ function run() {
                 timeoutSeconds: parseInt(core.getInput('timeoutSeconds')),
                 intervalSeconds: parseInt(core.getInput('intervalSeconds')),
                 warmupSeconds: parseInt(core.getInput('warmupSeconds')),
+                successConclusions,
                 log: msg => core.info(msg),
                 warn: msg => core.warning(msg),
             };
-            const checkName = core.getInput('checkName');
-            const workflowName = core.getInput('workflowName');
-            if (!areCheckNameAndWorkflowNameValid(checkName, workflowName)) {
-                return;
-            }
-            const successConclusions = (0, utils_1.parseSuccessConclusions)(core.getInput('successConclusions'), core);
-            if (successConclusions === undefined) {
-                return;
-            }
             const conclusion = checkName !== '' //
                 ? yield (0, poll_check_1.pollCheckrun)(Object.assign(Object.assign({}, inputs), { checkName }))
-                : yield (0, poll_workflow_1.pollWorkflowrun)(Object.assign(Object.assign({}, inputs), { workflowName }));
+                : yield (0, poll_workflow_1.pollWorkflowruns)(Object.assign(Object.assign({}, inputs), { workflowNames }));
             core.setOutput('conclusion', conclusion);
             if (!successConclusions.includes(conclusion)) {
                 core.setFailed(`Conclusion '${conclusion}' was not defined as a success`);
@@ -232,7 +234,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.pollWorkflowrun = void 0;
+exports.pollWorkflowruns = exports.pollWorkflowrun = void 0;
 const poll_1 = __nccwpck_require__(5498);
 const utils_1 = __nccwpck_require__(918);
 class WorkflowPoller {
@@ -300,6 +302,27 @@ function pollWorkflowrun(options) {
     });
 }
 exports.pollWorkflowrun = pollWorkflowrun;
+function pollWorkflowruns(options) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (options.workflowNames.length === 0) {
+            throw new Error('options.workflowNames.length === 0');
+        }
+        const conclusions = [];
+        let i = 0;
+        for (const workflowName of options.workflowNames) {
+            options.log(`[${i}/${options.workflowNames.length}] Polling ${workflowName}..`);
+            const conclusion = yield pollWorkflowrun(Object.assign(Object.assign({}, options), { workflowName }));
+            if (!options.successConclusions.includes(conclusion)) {
+                return conclusion;
+            }
+            conclusions.push(conclusion);
+            i++;
+        }
+        const result = (0, utils_1.summarizeConclusions)(conclusions);
+        return result;
+    });
+}
+exports.pollWorkflowruns = pollWorkflowruns;
 
 
 /***/ }),
@@ -310,7 +333,7 @@ exports.pollWorkflowrun = pollWorkflowrun;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.parseSuccessConclusions = exports.maxBy = exports.asConclusion = exports.isConclusion = void 0;
+exports.stringToList = exports.parseSuccessConclusions = exports.maxBy = exports.summarizeConclusions = exports.asConclusion = exports.isConclusion = void 0;
 function isConclusion(s, warn) {
     switch (s) {
         case null:
@@ -338,6 +361,24 @@ function asConclusion(s, warn) {
     }
 }
 exports.asConclusion = asConclusion;
+function summarizeConclusions(conclusions) {
+    const inOrderOfPriority = [
+        'timed_out',
+        'cancelled',
+        'failure',
+        'action_required',
+        'skipped',
+        'neutral',
+        'not_found',
+        'success',
+    ];
+    for (const priority of inOrderOfPriority) {
+        if (conclusions.includes(priority))
+            return priority;
+    }
+    return 'success';
+}
+exports.summarizeConclusions = summarizeConclusions;
 function maxBy(array, selector) {
     if (array.length === 0) {
         throw new Error('Array empty');
@@ -365,6 +406,24 @@ function parseSuccessConclusions(successConclusions, core) {
     return result;
 }
 exports.parseSuccessConclusions = parseSuccessConclusions;
+function stringToList(list, inputName) {
+    // parses a newline-separated list, or a comma-separated list between block parentheses
+    const trimmed = list.trim();
+    let entries;
+    if (trimmed.startsWith('[')) {
+        if (!trimmed.endsWith(']')) {
+            throw new Error(`Invalid list format for '${inputName}'`);
+        }
+        const withoutBlockParens = trimmed.substring(1, trimmed.length - 2);
+        entries = withoutBlockParens.split(',');
+    }
+    else {
+        entries = trimmed.split('\n');
+    }
+    const result = entries.map(entry => entry.trim()).filter(entry => entry !== '');
+    return result;
+}
+exports.stringToList = stringToList;
 
 
 /***/ }),

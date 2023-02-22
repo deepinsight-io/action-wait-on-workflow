@@ -1,8 +1,8 @@
 import type {components} from '@octokit/openapi-types'
 import type {Conclusion} from './utils'
-import {WorkflowOptions as Options} from './options'
+import {WorkflowOptions as Options, WorkflowsOptions} from './options'
 import {poll, Poller} from './poll'
-import {asConclusion, maxBy} from './utils'
+import {asConclusion, maxBy, summarizeConclusions} from './utils'
 
 type WorkflowRun = components['schemas']['workflow-run']
 
@@ -65,4 +65,25 @@ class WorkflowPoller implements Poller<Options> {
 
 export async function pollWorkflowrun(options: Options): Promise<Conclusion> {
   return poll(options, new WorkflowPoller())
+}
+
+export async function pollWorkflowruns(options: WorkflowsOptions): Promise<Conclusion> {
+  if (options.workflowNames.length === 0) {
+    throw new Error('options.workflowNames.length === 0')
+  }
+
+  const conclusions: Conclusion[] = []
+  let i = 0
+  for (const workflowName of options.workflowNames) {
+    options.log(`[${i}/${options.workflowNames.length}] Polling ${workflowName}..`)
+
+    const conclusion = await pollWorkflowrun({...options, workflowName})
+    if (!options.successConclusions.includes(conclusion)) {
+      return conclusion
+    }
+    conclusions.push(conclusion)
+    i++
+  }
+  const result = summarizeConclusions(conclusions)
+  return result
 }
