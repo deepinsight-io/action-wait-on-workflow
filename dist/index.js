@@ -308,7 +308,7 @@ function pollWorkflowruns(options) {
             throw new Error('options.workflowNames.length === 0');
         }
         const conclusions = [];
-        let i = 0;
+        let i = 1;
         for (const workflowName of options.workflowNames) {
             options.log(`[Workflow ${i}/${options.workflowNames.length}] ---------------------`);
             const conclusion = yield pollWorkflowrun(Object.assign(Object.assign({}, options), { workflowName }));

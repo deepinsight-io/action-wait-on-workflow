@@ -73,7 +73,7 @@ export async function pollWorkflowruns(options: WorkflowsOptions): Promise<Concl
   }
 
   const conclusions: Conclusion[] = []
-  let i = 0
+  let i = 1
   for (const workflowName of options.workflowNames) {
     options.log(`[Workflow ${i}/${options.workflowNames.length}] ---------------------`)
 
