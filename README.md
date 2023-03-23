@@ -12,9 +12,9 @@ A GitHub Action that allows you to wait for another GitHub check to complete. Th
         uses: deepinsight-io/action-wait-on-workflow@<commit_sha>
         id: wait-for-build
         with:
+          workflowName: build
           token: ${{ secrets.GITHUB_TOKEN }}
-          checkName: build
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
 
       - name: Do something with a passing build
         if: steps.wait-for-build.outputs.conclusion == 'success'
@@ -34,19 +34,23 @@ This Action accepts the following configuration parameters via `with:`
 
 - `checkName`
 
-  **Required**
-
+  **Required if no `workflowName` is specified.**
+  
   The name of the GitHub check to wait for. For example, `build` or `deploy`.
 
-  **IMPORTANT**: If the check you're referencing is provided by another GitHub Actions workflow, make sure that you reference the name of a _Job_ within that workflow, and _not_ the name the _Workflow_ itself.
+  **IMPORTANT**: If the check you're referencing is provided by another GitHub Actions workflow, make sure that you reference the name of a _job_ within that workflow, and _not_ the name the _workflow_ itself. If you want to wait for a workflow, i.e. all jobs within it, specify a `workflowName`.
+  
+- `workflowName`
+
+  **Required if no `checkName` is specified.**
+
+  The name of the GitHub workflow to wait for. For example, `build` or `deploy`.
 
 - `ref`
 
-  **Default: `github.sha`**
+  **Default: `github.event.pull_request.head.sha || github.sha`**
 
   The Git ref of the commit you want to poll for a passing check.
-
-  _PROTIP: You may want to use `github.event.pull_request.head.sha` when working with Pull Requests._
 
 - `repo`
 
