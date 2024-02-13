@@ -38,5 +38,5 @@ inputs:
     description: 'The number of seconds to poll until a check/workflow should be found'
     default: '0'
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'dist/index.js'
