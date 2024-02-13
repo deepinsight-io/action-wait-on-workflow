@@ -10,7 +10,7 @@ jobs:
   build: # make sure build/ci work properly
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: node --version; npm --version
       - name: npm install
         run: npm ci
@@ -20,7 +20,7 @@ jobs:
   integration-test: # make sure the action works on a clean machine without building
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./
         id: wait-for-build
         with:
@@ -32,7 +32,7 @@ jobs:
   ensure-npm-ran-pack: # make sure the js is compiled
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Back up current compiled js
         run: mv dist/index.js dist/index.current.js
 
