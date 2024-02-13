@@ -19,7 +19,7 @@ export function isConclusion(s: string | null, warn: (message: string) => void):
       return true
     default:
       warn(
-        `Conclusion '${s}' was not in the api spec list: [success, failure, neutral, cancelled, skipped, timed_out, action_required] + [not_found]`
+        `Conclusion '${s}' was not in the api spec list: [success, failure, neutral, cancelled, skipped, timed_out, action_required] + [not_found]`,
       )
       return false
   }
@@ -69,7 +69,7 @@ export function parseSuccessConclusions(successConclusions: string, core: typeof
     /^(success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found)(\|(success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found))*$/
   if (!regex.test(successConclusions)) {
     core.setFailed(
-      "Invalid 'successConclusions'. It must be a pipe-separated non-empty subset of the options 'success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found'"
+      "Invalid 'successConclusions'. It must be a pipe-separated non-empty subset of the options 'success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found'",
     )
     return undefined
   }

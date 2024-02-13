@@ -12,7 +12,7 @@ export interface Poller<TOptions> {
 }
 
 export async function poll<
-  TOptions extends Pick<SharedOptions, 'timeoutSeconds' | 'intervalSeconds' | 'warmupSeconds'>
+  TOptions extends Pick<SharedOptions, 'timeoutSeconds' | 'intervalSeconds' | 'warmupSeconds'>,
 >(options: TOptions, poller: Poller<TOptions>): Promise<Conclusion> {
   const {timeoutSeconds, intervalSeconds, warmupSeconds} = options
 
