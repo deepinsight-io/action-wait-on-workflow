@@ -82,6 +82,14 @@ This Action accepts the following configuration parameters via `with:`
 
   The number of seconds to poll until a check is found. If no check is found within this amount of time, this Action will emit a `conclusion` value of `not_found`.
 
+- `successConclusions`
+
+  **Default: `success|skipped|not_found`**
+  
+  A list of conlusions of the check/workflow run that will result in this action run succeeding.
+  Possible options are:
+      success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found
+
 ## Outputs
 
 This Action emits a single output named `conclusion`. It may be one of the following values:
