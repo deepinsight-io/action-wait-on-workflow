@@ -75,13 +75,15 @@ function run() {
                 : yield (0, poll_workflow_1.pollWorkflowruns)(Object.assign(Object.assign({}, inputs), { workflowNames }));
             core.setOutput('conclusion', conclusion);
             if (!successConclusions.includes(conclusion)) {
-                if (core.getInput('cancelOnFailure') === 'true') {
-                    yield cancelCurrentWorkflow(inputs.client);
-                    core.setFailed(`Conclusion '${conclusion}' was not defined as a success`);
-                    core.info('Cancelling current workflow...');
-                    yield new Promise(res => setTimeout(res, 60000));
-                }
                 core.setFailed(`Conclusion '${conclusion}' was not defined as a success`);
+                if (core.getInput('cancelOnFailure') === 'true') {
+                    core.info('Cancelling current workflow...');
+                    yield cancelCurrentWorkflow(inputs.client);
+                    for (let index = 0; index < 60; index++) {
+                        core.debug('Waiting for current workflow to be cancelled...');
+                        yield new Promise(res => setTimeout(res, 1000));
+                    }
+                }
             }
         }
         catch (error) {

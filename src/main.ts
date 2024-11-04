@@ -42,15 +42,17 @@ async function run(): Promise<void> {
         : await pollWorkflowruns({...inputs, workflowNames})
     core.setOutput('conclusion', conclusion)
     if (!successConclusions.includes(conclusion)) {
+      core.setFailed(`Conclusion '${conclusion}' was not defined as a success`)
+
       if (core.getInput('cancelOnFailure') === 'true') {
+        core.info('Cancelling current workflow...')
         await cancelCurrentWorkflow(inputs.client)
 
-        core.setFailed(`Conclusion '${conclusion}' was not defined as a success`)
-        core.info('Cancelling current workflow...')
-        await new Promise(res => setTimeout(res, 60_000))
+        for (let index = 0; index < 60; index++) {
+          core.debug('Waiting for current workflow to be cancelled...')
+          await new Promise(res => setTimeout(res, 1_000))
+        }
       }
-
-      core.setFailed(`Conclusion '${conclusion}' was not defined as a success`)
     }
   } catch (error) {
     core.setFailed(error instanceof Error ? error : JSON.stringify(error))
