@@ -4,6 +4,7 @@ import {SharedOptions} from './options'
 import {pollCheckrun} from './poll.check'
 import {pollWorkflowruns} from './poll.workflow'
 import {parseSuccessConclusions, stringToList} from './utils'
+import type {GitHub} from '@actions/github/lib/utils'
 
 async function run(): Promise<void> {
   try {
@@ -41,20 +42,14 @@ async function run(): Promise<void> {
         : await pollWorkflowruns({...inputs, workflowNames})
     core.setOutput('conclusion', conclusion)
     if (!successConclusions.includes(conclusion)) {
-      core.setFailed(`Conclusion '${conclusion}' was not defined as a success`)
-
       if (core.getInput('cancelOnFailure') === 'true') {
-        inputs.client.rest.actions.cancelWorkflowRun({
-          owner: context.repo.owner,
-          repo: context.repo.repo,
-          run_id: context.runId
-        })
+        await cancelCurrentWorkflow(inputs.client)
           
         core.info('Waiting for workflow to be cancelled...')
-        while (true) {
-          await new Promise(res => setTimeout(res, 10000))
-        }
+        await new Promise(res => setTimeout(res, 60_000))
       }
+      
+      core.setFailed(`Conclusion '${conclusion}' was not defined as a success`)
     }
   } catch (error) {
     core.setFailed(error instanceof Error ? error : JSON.stringify(error))
@@ -73,5 +68,13 @@ function areCheckNameAndWorkflowNameValid(checkName: string, workflowName: strin
     return false
   }
   return true
+}
+
+function cancelCurrentWorkflow(client: InstanceType<typeof GitHub>) {
+  return client.rest.actions.cancelWorkflowRun({
+    owner: context.repo.owner,
+    repo: context.repo.repo,
+    run_id: context.runId
+  })
 }
 run()
