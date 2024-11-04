@@ -76,6 +76,14 @@ function run() {
             core.setOutput('conclusion', conclusion);
             if (!successConclusions.includes(conclusion)) {
                 core.setFailed(`Conclusion '${conclusion}' was not defined as a success`);
+                if (core.getInput('cancelOnFailure') === 'true') {
+                    core.info('Cancelling current workflow...');
+                    yield cancelCurrentWorkflow(inputs.client);
+                    for (let index = 0; index < 60; index++) {
+                        core.debug('Waiting for current workflow to be cancelled...');
+                        yield new Promise(res => setTimeout(res, 1000));
+                    }
+                }
             }
         }
         catch (error) {
@@ -95,6 +103,15 @@ function areCheckNameAndWorkflowNameValid(checkName, workflowName) {
         return false;
     }
     return true;
+}
+function cancelCurrentWorkflow(client) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return yield client.rest.actions.cancelWorkflowRun({
+            owner: github_1.context.repo.owner,
+            repo: github_1.context.repo.repo,
+            run_id: github_1.context.runId,
+        });
+    });
 }
 run();
 
