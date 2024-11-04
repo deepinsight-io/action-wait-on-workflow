@@ -77,11 +77,9 @@ function run() {
             if (!successConclusions.includes(conclusion)) {
                 if (core.getInput('cancelOnFailure') === 'true') {
                     yield cancelCurrentWorkflow(inputs.client);
-                    core.info('Waiting for workflow to be cancelled...');
-                    for (let index = 0; index < 60; index++) {
-                        core.info('Waiting for workflow to be cancelled...');
-                        yield new Promise(res => setTimeout(res, 1000));
-                    }
+                    core.setFailed(`Conclusion '${conclusion}' was not defined as a success`);
+                    core.info('Cancelling current workflow...');
+                    yield new Promise(res => setTimeout(res, 60000));
                 }
                 core.setFailed(`Conclusion '${conclusion}' was not defined as a success`);
             }
