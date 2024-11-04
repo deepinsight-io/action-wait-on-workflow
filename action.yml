@@ -37,6 +37,9 @@ inputs:
   warmupSeconds:
     description: 'The number of seconds to poll until a check/workflow should be found'
     default: '0'
+  cancelOnFailure:
+    description: If true, when the conclusion isn't any of the `successConclusions`, the current workflow is cancelled instead of failed.
+    default: false
 runs:
   using: 'node20'
   main: 'dist/index.js'

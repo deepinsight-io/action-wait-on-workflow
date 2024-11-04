@@ -42,6 +42,19 @@ async function run(): Promise<void> {
     core.setOutput('conclusion', conclusion)
     if (!successConclusions.includes(conclusion)) {
       core.setFailed(`Conclusion '${conclusion}' was not defined as a success`)
+
+      if (core.getInput('cancelOnFailure') === 'true') {
+        inputs.client.rest.actions.cancelWorkflowRun({
+          owner: context.repo.owner,
+          repo: context.repo.repo,
+          run_id: context.runId
+        })
+          
+        core.info('Waiting for workflow to be cancelled...')
+        while (true) {
+          await new Promise(res => setTimeout(res, 10000))
+        }
+      }
     }
   } catch (error) {
     core.setFailed(error instanceof Error ? error : JSON.stringify(error))
