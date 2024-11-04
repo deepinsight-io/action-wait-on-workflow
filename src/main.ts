@@ -46,7 +46,10 @@ async function run(): Promise<void> {
         await cancelCurrentWorkflow(inputs.client)
           
         core.info('Waiting for workflow to be cancelled...')
-        await new Promise(res => setTimeout(res, 60_000))
+        for (let index = 0; index < 60; index++) {
+          core.info('Waiting for workflow to be cancelled...')
+          await new Promise(res => setTimeout(res, 1_000))
+        }
       }
       
       core.setFailed(`Conclusion '${conclusion}' was not defined as a success`)
