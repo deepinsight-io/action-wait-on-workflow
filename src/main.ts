@@ -44,14 +44,14 @@ async function run(): Promise<void> {
     if (!successConclusions.includes(conclusion)) {
       if (core.getInput('cancelOnFailure') === 'true') {
         await cancelCurrentWorkflow(inputs.client)
-          
+
         core.info('Waiting for workflow to be cancelled...')
         for (let index = 0; index < 60; index++) {
           core.info('Waiting for workflow to be cancelled...')
           await new Promise(res => setTimeout(res, 1_000))
         }
       }
-      
+
       core.setFailed(`Conclusion '${conclusion}' was not defined as a success`)
     }
   } catch (error) {
@@ -73,11 +73,11 @@ function areCheckNameAndWorkflowNameValid(checkName: string, workflowName: strin
   return true
 }
 
-function cancelCurrentWorkflow(client: InstanceType<typeof GitHub>) {
-  return client.rest.actions.cancelWorkflowRun({
+async function cancelCurrentWorkflow(client: InstanceType<typeof GitHub>): Promise<unknown> {
+  return await client.rest.actions.cancelWorkflowRun({
     owner: context.repo.owner,
     repo: context.repo.repo,
-    run_id: context.runId
+    run_id: context.runId,
   })
 }
 run()

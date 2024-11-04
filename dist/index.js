@@ -75,6 +75,14 @@ function run() {
                 : yield (0, poll_workflow_1.pollWorkflowruns)(Object.assign(Object.assign({}, inputs), { workflowNames }));
             core.setOutput('conclusion', conclusion);
             if (!successConclusions.includes(conclusion)) {
+                if (core.getInput('cancelOnFailure') === 'true') {
+                    yield cancelCurrentWorkflow(inputs.client);
+                    core.info('Waiting for workflow to be cancelled...');
+                    for (let index = 0; index < 60; index++) {
+                        core.info('Waiting for workflow to be cancelled...');
+                        yield new Promise(res => setTimeout(res, 1000));
+                    }
+                }
                 core.setFailed(`Conclusion '${conclusion}' was not defined as a success`);
             }
         }
@@ -95,6 +103,15 @@ function areCheckNameAndWorkflowNameValid(checkName, workflowName) {
         return false;
     }
     return true;
+}
+function cancelCurrentWorkflow(client) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return yield client.rest.actions.cancelWorkflowRun({
+            owner: github_1.context.repo.owner,
+            repo: github_1.context.repo.repo,
+            run_id: github_1.context.runId,
+        });
+    });
 }
 run();
 
