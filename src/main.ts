@@ -50,7 +50,7 @@ async function run(): Promise<void> {
 
         for (let index = 0; index < 60; index++) {
           core.debug('Waiting for current workflow to be cancelled...')
-          await new Promise(res => setTimeout(res, 1_000))
+          await new Promise(resolve => setTimeout(resolve, 1_000))
         }
       }
     }
@@ -73,11 +73,21 @@ function areCheckNameAndWorkflowNameValid(checkName: string, workflowName: strin
   return true
 }
 
-async function cancelCurrentWorkflow(client: InstanceType<typeof GitHub>): Promise<unknown> {
-  return await client.rest.actions.cancelWorkflowRun({
-    owner: context.repo.owner,
-    repo: context.repo.repo,
-    run_id: context.runId,
-  })
+async function cancelCurrentWorkflow(client: InstanceType<typeof GitHub>, retryCount = 3): Promise<unknown> {
+  try {
+    return await client.rest.actions.cancelWorkflowRun({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      run_id: context.runId,
+    })
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.warn(error)
+
+    if (retryCount !== 1) {
+      await new Promise(resolve => setTimeout(resolve, 1_000))
+      await cancelCurrentWorkflow(client, retryCount - 1)
+    }
+  }
 }
 run()

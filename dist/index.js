@@ -81,7 +81,7 @@ function run() {
                     yield cancelCurrentWorkflow(inputs.client);
                     for (let index = 0; index < 60; index++) {
                         core.debug('Waiting for current workflow to be cancelled...');
-                        yield new Promise(res => setTimeout(res, 1000));
+                        yield new Promise(resolve => setTimeout(resolve, 1000));
                     }
                 }
             }
@@ -104,13 +104,23 @@ function areCheckNameAndWorkflowNameValid(checkName, workflowName) {
     }
     return true;
 }
-function cancelCurrentWorkflow(client) {
+function cancelCurrentWorkflow(client, retryCount = 3) {
     return __awaiter(this, void 0, void 0, function* () {
-        return yield client.rest.actions.cancelWorkflowRun({
-            owner: github_1.context.repo.owner,
-            repo: github_1.context.repo.repo,
-            run_id: github_1.context.runId,
-        });
+        try {
+            return yield client.rest.actions.cancelWorkflowRun({
+                owner: github_1.context.repo.owner,
+                repo: github_1.context.repo.repo,
+                run_id: github_1.context.runId,
+            });
+        }
+        catch (error) {
+            // eslint-disable-next-line no-console
+            console.warn(error);
+            if (retryCount !== 1) {
+                yield new Promise(resolve => setTimeout(resolve, 1000));
+                yield cancelCurrentWorkflow(client, retryCount - 1);
+            }
+        }
     });
 }
 run();
