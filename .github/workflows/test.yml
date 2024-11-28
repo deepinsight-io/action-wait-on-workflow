@@ -22,11 +22,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./
-        id: wait-for-build
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           checkName: build
           successConclusions: success
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Also do an integration test run with anyOf(...)
+        uses: ./
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: build
+          successConclusions: anyOf(success)
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
   ensure-npm-ran-pack: # make sure the js is compiled
