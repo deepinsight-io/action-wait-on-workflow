@@ -458,6 +458,7 @@ function maxBy(array, selector) {
 exports.maxBy = maxBy;
 function parseSuccessConclusions(successConclusions, core) {
     let any = false;
+    successConclusions = successConclusions.trim();
     if (successConclusions.startsWith('anyOf(')) {
         if (!successConclusions.endsWith(')')) {
             core.setFailed("Invalid 'successConclusions'. If starting with 'anyOf(' it must end on a ')'");

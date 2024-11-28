@@ -66,6 +66,7 @@ export function maxBy<T>(array: T[], selector: (element: T) => number): T {
 
 export function parseSuccessConclusions(successConclusions: string, core: typeof actionsCore): string[] | undefined {
   let any = false
+  successConclusions = successConclusions.trim()
   if (successConclusions.startsWith('anyOf(')) {
     if (!successConclusions.endsWith(')')) {
       core.setFailed("Invalid 'successConclusions'. If starting with 'anyOf(' it must end on a ')'")
