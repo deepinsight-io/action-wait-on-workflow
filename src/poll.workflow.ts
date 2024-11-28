@@ -78,6 +78,9 @@ export async function pollWorkflowruns(options: WorkflowsOptions): Promise<Concl
     options.log(`[Workflow ${i}/${options.workflowNames.length}] ---------------------`)
 
     const conclusion = await pollWorkflowrun({...options, workflowName})
+    if (options.successConclusions.includes('any') && options.successConclusions.includes(conclusion)) {
+      return 'success'
+    }
     if (!options.successConclusions.includes(conclusion)) {
       // TODO: we could be smart and in case of a not_found revisit that workflow later
       // As workaround the workflowNames can be provided in execution order

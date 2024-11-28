@@ -65,6 +65,15 @@ export function maxBy<T>(array: T[], selector: (element: T) => number): T {
 }
 
 export function parseSuccessConclusions(successConclusions: string, core: typeof actionsCore): string[] | undefined {
+  let any = false
+  if (successConclusions.startsWith('anyOf(')) {
+    if (!successConclusions.endsWith(')')) {
+      core.setFailed("Invalid 'successConclusions'. If starting with 'anyOf(' it must end on a ')'")
+      return undefined
+    }
+    any = true
+    successConclusions = successConclusions.substring('anyOf('.length, successConclusions.length - 1 - ')'.length)
+  }
   const regex =
     /^(success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found)(\|(success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found))*$/
   if (!regex.test(successConclusions)) {
@@ -74,6 +83,9 @@ export function parseSuccessConclusions(successConclusions: string, core: typeof
     return undefined
   }
   const result = successConclusions.split('|')
+  if (any) {
+    result.push('any')
+  }
   core.debug(`successConclusions.split('|'): ${JSON.stringify(result)}`)
   return result
 }

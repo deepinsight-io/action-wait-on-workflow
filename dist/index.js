@@ -367,6 +367,9 @@ function pollWorkflowruns(options) {
         for (const workflowName of options.workflowNames) {
             options.log(`[Workflow ${i}/${options.workflowNames.length}] ---------------------`);
             const conclusion = yield pollWorkflowrun(Object.assign(Object.assign({}, options), { workflowName }));
+            if (options.successConclusions.includes('any') && options.successConclusions.includes(conclusion)) {
+                return 'success';
+            }
             if (!options.successConclusions.includes(conclusion)) {
                 // TODO: we could be smart and in case of a not_found revisit that workflow later
                 // As workaround the workflowNames can be provided in execution order
@@ -454,12 +457,24 @@ function maxBy(array, selector) {
 }
 exports.maxBy = maxBy;
 function parseSuccessConclusions(successConclusions, core) {
+    let any = false;
+    if (successConclusions.startsWith('anyOf(')) {
+        if (!successConclusions.endsWith(')')) {
+            core.setFailed("Invalid 'successConclusions'. If starting with 'anyOf(' it must end on a ')'");
+            return undefined;
+        }
+        any = true;
+        successConclusions = successConclusions.substring('anyOf('.length, successConclusions.length - 1 - ')'.length);
+    }
     const regex = /^(success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found)(\|(success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found))*$/;
     if (!regex.test(successConclusions)) {
         core.setFailed("Invalid 'successConclusions'. It must be a pipe-separated non-empty subset of the options 'success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found'");
         return undefined;
     }
     const result = successConclusions.split('|');
+    if (any) {
+        result.push('any');
+    }
     core.debug(`successConclusions.split('|'): ${JSON.stringify(result)}`);
     return result;
 }
