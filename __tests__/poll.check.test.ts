@@ -205,3 +205,60 @@ test('reflects the status of the last started run', async () => {
 
   expect(result).toBe('failure')
 })
+
+test('can handle multiple check names', async () => {
+  client.rest.checks.listForRef
+    .mockResolvedValueOnce({
+      // t = 0, checkrun = 0
+      data: {
+        check_runs: [
+          {
+            id: '1',
+            status: 'in_progress',
+            started_at: '2018-01-01T00:00:01Z',
+          },
+        ],
+      },
+    })
+    .mockResolvedValueOnce({
+      // t = 0, checkrun = 1
+      data: {
+        check_runs: [
+          {
+            id: '2',
+            status: 'in_progress',
+            started_at: '2018-01-01T00:00:01Z',
+          },
+        ],
+      },
+    })
+    .mockResolvedValueOnce({
+      // t = 1, checkrun = 0
+      data: {
+        check_runs: [
+          {
+            id: '1',
+            status: 'in_progress',
+            started_at: '2018-01-01T00:00:01Z',
+          },
+        ],
+      },
+    })
+    .mockResolvedValueOnce({
+      // t = 1, checkrun = 1
+      data: {
+        check_runs: [
+          {
+            id: '2',
+            status: 'completed',
+            conclusion: 'failure',
+            started_at: '2018-01-01T00:00:01Z',
+          },
+        ],
+      },
+    })
+
+  const result = await run()
+
+  expect(result).toBe('failure')
+})

@@ -149,25 +149,31 @@ const poll_1 = __nccwpck_require__(5498);
 class CheckPoller {
     func(options) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { client, log, checkName, intervalSeconds, owner, repo, ref } = options;
-            log(`Retrieving check runs named '${checkName}' on ${owner}/${repo}@${ref}...`);
-            const result = yield client.rest.checks.listForRef({
-                check_name: checkName,
-                owner,
-                repo,
-                ref,
-            });
-            log(`Retrieved ${result.data.check_runs.length} check runs named '${checkName}'`);
-            const lastStartedCheck = this.getLastStartedCheck(result.data.check_runs);
-            if (lastStartedCheck !== undefined && lastStartedCheck.status === 'completed') {
-                log(`Found a completed check with id ${lastStartedCheck.id} and conclusion '${lastStartedCheck.conclusion}'`);
-                // conclusion is only `null` if status is not `completed`.
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                return lastStartedCheck.conclusion;
+            const { client, log, checkNames, intervalSeconds, owner, repo, ref } = options;
+            let hasLastStartedCheck = false;
+            for (const checkName of checkNames) {
+                log(`Retrieving check runs named '${checkName}' on ${owner}/${repo}@${ref}...`);
+                const result = yield client.rest.checks.listForRef({
+                    check_name: checkName,
+                    owner,
+                    repo,
+                    ref,
+                });
+                log(`Retrieved ${result.data.check_runs.length} check runs named '${checkName}'`);
+                const lastStartedCheck = this.getLastStartedCheck(result.data.check_runs);
+                if (lastStartedCheck !== undefined) {
+                    if (lastStartedCheck.status === 'completed') {
+                        log(`Found a completed check with id ${lastStartedCheck.id} and conclusion '${lastStartedCheck.conclusion}'`);
+                        // conclusion is only `null` if status is not `completed`.
+                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                        return lastStartedCheck.conclusion;
+                    }
+                    hasLastStartedCheck = true;
+                }
             }
-            log(`No completed checks named '${checkName}', waiting for ${intervalSeconds} seconds...`);
+            log(`No completed checks named '${checkNames.join("', '")}', waiting for ${intervalSeconds} seconds...`);
             log('');
-            return lastStartedCheck === undefined ? undefined : null;
+            return hasLastStartedCheck ? null : undefined;
         });
     }
     onTimedOut(options, warmupDeadlined) {
@@ -193,7 +199,9 @@ class CheckPoller {
 }
 function pollCheckrun(options) {
     return __awaiter(this, void 0, void 0, function* () {
-        return yield (0, poll_1.poll)(options, new CheckPoller());
+        const checkNames = options.checkName.split('\n').map(name => name.trim());
+        options.log(`Check names: '${checkNames.join("', '")}'`);
+        return yield (0, poll_1.poll)(Object.assign(Object.assign({}, options), { checkNames }), new CheckPoller());
     });
 }
 exports.pollCheckrun = pollCheckrun;

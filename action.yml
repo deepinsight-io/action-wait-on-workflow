@@ -9,11 +9,13 @@ inputs:
     description: 'The GitHub token to use for making API requests.'
     required: true
   checkName:
-    description: 'The name of the GitHub check/workflow to wait for. For example, `build` or `deploy`. Either this xor "workflowName" must be provided.'
+    description: |
+      The name of the GitHub check/workflow to wait for. For example, `build` or `deploy`. Either this xor "workflowName" must be provided.
+      It can also be a list of check names, in the form of a newline-separated list.
   workflowName:
     description: |
        The name of the GitHub workflow to wait for. For example, `build` or `deploy`. Either this xor "checkName" must be provided.
-       It can also be a list of workflow names, in the for of a newline-separated list, or comma-separated list between square brackets.
+       It can also be a list of workflow names, in the form of a newline-separated list or comma-separated list between square brackets.
   ref:
     description: |
       The Git ref of the commit you want to poll for a passing check/workflow.

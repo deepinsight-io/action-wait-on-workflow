@@ -36,7 +36,7 @@ This Action accepts the following configuration parameters via `with:`
 
   **Required if no `workflowName` is specified.**
   
-  The name of the GitHub check to wait for. For example, `build` or `deploy`.
+  The name(s) of the GitHub check(s) to wait for. For example, `build` or `deploy`. If providing multiple, separate by newline.
 
   **IMPORTANT**: If the check you're referencing is provided by another GitHub Actions workflow, make sure that you reference the name of a _job_ within that workflow, and _not_ the name the _workflow_ itself. If you want to wait for a workflow, i.e. all jobs within it, specify a `workflowName`.
   

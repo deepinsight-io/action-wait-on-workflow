@@ -6,28 +6,35 @@ type CheckRun = components['schemas']['check-run']
 
 class CheckPoller implements Poller<Options> {
   public async func(options: Options): Promise<Conclusion | undefined | null> {
-    const {client, log, checkName, intervalSeconds, owner, repo, ref} = options
+    const {client, log, checkNames, intervalSeconds, owner, repo, ref} = options
 
-    log(`Retrieving check runs named '${checkName}' on ${owner}/${repo}@${ref}...`)
-    const result = await client.rest.checks.listForRef({
-      check_name: checkName,
-      owner,
-      repo,
-      ref,
-    })
-    log(`Retrieved ${result.data.check_runs.length} check runs named '${checkName}'`)
+    let hasLastStartedCheck = false
+    for (const checkName of checkNames) {
+      log(`Retrieving check runs named '${checkName}' on ${owner}/${repo}@${ref}...`)
+      const result = await client.rest.checks.listForRef({
+        check_name: checkName,
+        owner,
+        repo,
+        ref,
+      })
+      log(`Retrieved ${result.data.check_runs.length} check runs named '${checkName}'`)
 
-    const lastStartedCheck = this.getLastStartedCheck(result.data.check_runs)
-    if (lastStartedCheck !== undefined && lastStartedCheck.status === 'completed') {
-      log(`Found a completed check with id ${lastStartedCheck.id} and conclusion '${lastStartedCheck.conclusion}'`)
-      // conclusion is only `null` if status is not `completed`.
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return lastStartedCheck.conclusion!
+      const lastStartedCheck = this.getLastStartedCheck(result.data.check_runs)
+      if (lastStartedCheck !== undefined) {
+        if (lastStartedCheck.status === 'completed') {
+          log(`Found a completed check with id ${lastStartedCheck.id} and conclusion '${lastStartedCheck.conclusion}'`)
+          // conclusion is only `null` if status is not `completed`.
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          return lastStartedCheck.conclusion!
+        }
+        hasLastStartedCheck = true
+      }
     }
 
-    log(`No completed checks named '${checkName}', waiting for ${intervalSeconds} seconds...`)
+    log(`No completed checks named '${checkNames.join("', '")}', waiting for ${intervalSeconds} seconds...`)
     log('')
-    return lastStartedCheck === undefined ? undefined : null
+
+    return hasLastStartedCheck ? null : undefined
   }
   public onTimedOut(options: Options, warmupDeadlined: boolean): Conclusion {
     const {log, timeoutSeconds, warmupSeconds} = options
@@ -50,6 +57,8 @@ class CheckPoller implements Poller<Options> {
   }
 }
 
-export async function pollCheckrun(options: Options): Promise<Conclusion> {
-  return await poll(options, new CheckPoller())
+export async function pollCheckrun(options: Omit<Options, 'checkNames'> & {checkName: string}): Promise<Conclusion> {
+  const checkNames = options.checkName.split('\n').map(name => name.trim())
+  options.log(`Check names: '${checkNames.join("', '")}'`)
+  return await poll({...options, checkNames}, new CheckPoller())
 }
