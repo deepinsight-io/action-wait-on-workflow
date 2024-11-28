@@ -4,12 +4,18 @@ import type {CheckOptions as Options} from './options'
 import {poll, Poller} from './poll'
 type CheckRun = components['schemas']['check-run']
 
+/**
+ * Gets the last started check of the specified name at the specified ref and report its result.
+ * If there are multiple check names specified,
+ *   if anyOf is specified, returns if any of those last started checks are successful
+ *   otherwise we throw not implemented
+ */
 class CheckPoller implements Poller<Options> {
   public async func(options: Options): Promise<Conclusion | undefined | null> {
     const {client, log, checkNames, intervalSeconds, owner, repo, ref} = options
 
-    let hasLastStartedCheck = false
-    for (const checkName of checkNames) {
+    let foundCheck = false
+    for (const checkName of [...checkNames]) {
       log(`Retrieving check runs named '${checkName}' on ${owner}/${repo}@${ref}...`)
       const result = await client.rest.checks.listForRef({
         check_name: checkName,
@@ -24,16 +30,27 @@ class CheckPoller implements Poller<Options> {
         if (isCompleted(lastStartedCheck)) {
           log(`Found a completed check with id ${lastStartedCheck.id} and conclusion '${lastStartedCheck.conclusion}'`)
 
-          return lastStartedCheck.conclusion
+          if (options.checkNames.length === 1) {
+            return lastStartedCheck.conclusion
+          }
+          if (options.successConclusions.includes('any')) {
+            if (options.successConclusions.includes(lastStartedCheck.conclusion)) {
+              return 'success'
+            }
+            // remove from pool of to be queried check names:
+            options.checkNames.splice(options.checkNames.indexOf(checkName), 1)
+          } else {
+            throw new Error('Multiple checkNames without anyOf(...) not implemented yet')
+          }
         }
-        hasLastStartedCheck = true
+        foundCheck = true
       }
     }
 
     log(`No completed checks named '${checkNames.join("', '")}', waiting for ${intervalSeconds} seconds...`)
     log('')
 
-    return hasLastStartedCheck ? null : undefined
+    return foundCheck ? null : undefined
   }
   public onTimedOut(options: Options, warmupDeadlined: boolean): Conclusion {
     const {log, timeoutSeconds, warmupSeconds} = options
