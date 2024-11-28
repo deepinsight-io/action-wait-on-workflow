@@ -21,11 +21,10 @@ class CheckPoller implements Poller<Options> {
 
       const lastStartedCheck = this.getLastStartedCheck(result.data.check_runs)
       if (lastStartedCheck !== undefined) {
-        if (lastStartedCheck.status === 'completed') {
+        if (isCompleted(lastStartedCheck)) {
           log(`Found a completed check with id ${lastStartedCheck.id} and conclusion '${lastStartedCheck.conclusion}'`)
-          // conclusion is only `null` if status is not `completed`.
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          return lastStartedCheck.conclusion!
+
+          return lastStartedCheck.conclusion
         }
         hasLastStartedCheck = true
       }
@@ -57,6 +56,10 @@ class CheckPoller implements Poller<Options> {
   }
 }
 
+function isCompleted(checkRun: CheckRun): checkRun is CheckRun & {conclusion: Exclude<CheckRun['conclusion'], null>} {
+  // conclusion is only `null` if status is not `completed`.
+  return checkRun.status === 'completed'
+}
 export async function pollCheckrun(options: Omit<Options, 'checkNames'> & {checkName: string}): Promise<Conclusion> {
   const checkNames = options.checkName.split('\n').map(name => name.trim())
   options.log(`Check names: '${checkNames.join("', '")}'`)
