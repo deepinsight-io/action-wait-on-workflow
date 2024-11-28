@@ -73,7 +73,9 @@ export function parseSuccessConclusions(successConclusions: string, core: typeof
       return undefined
     }
     any = true
+    core.debug('Trimming "anyOf(" and ")"')
     successConclusions = successConclusions.substring('anyOf('.length, successConclusions.length - 1 - ')'.length)
+    core.debug(`successConclusions=${successConclusions}`)
   }
   const regex =
     /^(success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found)(\|(success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found))*$/
@@ -85,6 +87,7 @@ export function parseSuccessConclusions(successConclusions: string, core: typeof
   }
   const result = successConclusions.split('|')
   if (any) {
+    core.debug('Pushing "any"')
     result.push('any')
   }
   core.debug(`successConclusions.split('|'): ${JSON.stringify(result)}`)
