@@ -466,7 +466,7 @@ function parseSuccessConclusions(successConclusions, core) {
         }
         any = true;
         core.debug('Trimming "anyOf(" and ")"');
-        successConclusions = successConclusions.substring('anyOf('.length, successConclusions.length - 1 - ')'.length);
+        successConclusions = successConclusions.substring('anyOf('.length, successConclusions.length - ')'.length);
         core.debug(`successConclusions=${successConclusions}`);
     }
     const regex = /^(success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found)(\|(success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found))*$/;

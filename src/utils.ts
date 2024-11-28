@@ -74,7 +74,7 @@ export function parseSuccessConclusions(successConclusions: string, core: typeof
     }
     any = true
     core.debug('Trimming "anyOf(" and ")"')
-    successConclusions = successConclusions.substring('anyOf('.length, successConclusions.length - 1 - ')'.length)
+    successConclusions = successConclusions.substring('anyOf('.length, successConclusions.length - ')'.length)
     core.debug(`successConclusions=${successConclusions}`)
   }
   const regex =
