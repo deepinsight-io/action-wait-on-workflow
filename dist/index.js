@@ -146,28 +146,50 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.pollCheckrun = void 0;
 const utils_1 = __nccwpck_require__(918);
 const poll_1 = __nccwpck_require__(5498);
+/**
+ * Gets the last started check of the specified name at the specified ref and report its result.
+ * If there are multiple check names specified,
+ *   if anyOf is specified, returns if any of those last started checks are successful
+ *   otherwise we throw not implemented
+ */
 class CheckPoller {
     func(options) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { client, log, checkName, intervalSeconds, owner, repo, ref } = options;
-            log(`Retrieving check runs named '${checkName}' on ${owner}/${repo}@${ref}...`);
-            const result = yield client.rest.checks.listForRef({
-                check_name: checkName,
-                owner,
-                repo,
-                ref,
-            });
-            log(`Retrieved ${result.data.check_runs.length} check runs named '${checkName}'`);
-            const lastStartedCheck = this.getLastStartedCheck(result.data.check_runs);
-            if (lastStartedCheck !== undefined && lastStartedCheck.status === 'completed') {
-                log(`Found a completed check with id ${lastStartedCheck.id} and conclusion '${lastStartedCheck.conclusion}'`);
-                // conclusion is only `null` if status is not `completed`.
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                return lastStartedCheck.conclusion;
+            const { client, log, checkNames, intervalSeconds, owner, repo, ref } = options;
+            let foundCheck = false;
+            for (const checkName of [...checkNames]) {
+                log(`Retrieving check runs named '${checkName}' on ${owner}/${repo}@${ref}...`);
+                const result = yield client.rest.checks.listForRef({
+                    check_name: checkName,
+                    owner,
+                    repo,
+                    ref,
+                });
+                log(`Retrieved ${result.data.check_runs.length} check runs named '${checkName}'`);
+                const lastStartedCheck = this.getLastStartedCheck(result.data.check_runs);
+                if (lastStartedCheck !== undefined) {
+                    if (isCompleted(lastStartedCheck)) {
+                        log(`Found a completed check with id ${lastStartedCheck.id} and conclusion '${lastStartedCheck.conclusion}'`);
+                        if (options.checkNames.length === 1) {
+                            return lastStartedCheck.conclusion;
+                        }
+                        if (options.successConclusions.includes('any')) {
+                            if (options.successConclusions.includes(lastStartedCheck.conclusion)) {
+                                return 'success';
+                            }
+                            // remove from pool of to be queried check names:
+                            options.checkNames.splice(options.checkNames.indexOf(checkName), 1);
+                        }
+                        else {
+                            throw new Error('Multiple checkNames without anyOf(...) not implemented yet');
+                        }
+                    }
+                    foundCheck = true;
+                }
             }
-            log(`No completed checks named '${checkName}', waiting for ${intervalSeconds} seconds...`);
+            log(`No completed checks named '${checkNames.join("', '")}', waiting for ${intervalSeconds} seconds...`);
             log('');
-            return lastStartedCheck === undefined ? undefined : null;
+            return foundCheck ? null : undefined;
         });
     }
     onTimedOut(options, warmupDeadlined) {
@@ -191,9 +213,15 @@ class CheckPoller {
         });
     }
 }
+function isCompleted(checkRun) {
+    // conclusion is only `null` if status is not `completed`.
+    return checkRun.status === 'completed';
+}
 function pollCheckrun(options) {
     return __awaiter(this, void 0, void 0, function* () {
-        return yield (0, poll_1.poll)(options, new CheckPoller());
+        const checkNames = options.checkName.split('\n').map(name => name.trim());
+        options.log(`Check names: '${checkNames.join("', '")}'`);
+        return yield (0, poll_1.poll)(Object.assign(Object.assign({}, options), { checkNames }), new CheckPoller());
     });
 }
 exports.pollCheckrun = pollCheckrun;
@@ -339,6 +367,9 @@ function pollWorkflowruns(options) {
         for (const workflowName of options.workflowNames) {
             options.log(`[Workflow ${i}/${options.workflowNames.length}] ---------------------`);
             const conclusion = yield pollWorkflowrun(Object.assign(Object.assign({}, options), { workflowName }));
+            if (options.successConclusions.includes('any') && options.successConclusions.includes(conclusion)) {
+                return 'success';
+            }
             if (!options.successConclusions.includes(conclusion)) {
                 // TODO: we could be smart and in case of a not_found revisit that workflow later
                 // As workaround the workflowNames can be provided in execution order
@@ -426,12 +457,28 @@ function maxBy(array, selector) {
 }
 exports.maxBy = maxBy;
 function parseSuccessConclusions(successConclusions, core) {
+    let any = false;
+    successConclusions = successConclusions.trim();
+    if (successConclusions.startsWith('anyOf(')) {
+        if (!successConclusions.endsWith(')')) {
+            core.setFailed("Invalid 'successConclusions'. If starting with 'anyOf(' it must end on a ')'");
+            return undefined;
+        }
+        any = true;
+        core.debug('Trimming "anyOf(" and ")"');
+        successConclusions = successConclusions.substring('anyOf('.length, successConclusions.length - ')'.length);
+        core.debug(`successConclusions=${successConclusions}`);
+    }
     const regex = /^(success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found)(\|(success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found))*$/;
     if (!regex.test(successConclusions)) {
         core.setFailed("Invalid 'successConclusions'. It must be a pipe-separated non-empty subset of the options 'success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found'");
         return undefined;
     }
     const result = successConclusions.split('|');
+    if (any) {
+        core.debug('Pushing "any"');
+        result.push('any');
+    }
     core.debug(`successConclusions.split('|'): ${JSON.stringify(result)}`);
     return result;
 }

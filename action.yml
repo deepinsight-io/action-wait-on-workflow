@@ -9,11 +9,13 @@ inputs:
     description: 'The GitHub token to use for making API requests.'
     required: true
   checkName:
-    description: 'The name of the GitHub check/workflow to wait for. For example, `build` or `deploy`. Either this xor "workflowName" must be provided.'
+    description: |
+      The name of the GitHub check/workflow to wait for. For example, `build` or `deploy`. Either this xor "workflowName" must be provided.
+      It can also be a list of check names, in the form of a newline-separated list.
   workflowName:
     description: |
        The name of the GitHub workflow to wait for. For example, `build` or `deploy`. Either this xor "checkName" must be provided.
-       It can also be a list of workflow names, in the for of a newline-separated list, or comma-separated list between square brackets.
+       It can also be a list of workflow names, in the form of a newline-separated list or comma-separated list between square brackets.
   ref:
     description: |
       The Git ref of the commit you want to poll for a passing check/workflow.
@@ -22,7 +24,10 @@ inputs:
     description: |
       A list of conlusions of the check/workflow run that will result in this action run succeeding.
       Possible options are: 
-          success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found
+          success|failure|neutral|cancelled|skipped|timed_out|action_required|not_found optionally wrapped by `anyOf(...)`
+
+      If wrapped by `anyOf(...)`, then if any check of workflow conclusion matches any of the provided options, `success` is concluded.
+      If not wrapped, then all check or workflow conclusions must match the provided options to conclude.
     default: "success|skipped|not_found"
   repo:
     description: 'The name of the GitHub repository you want to poll for a passing check/workflow.'
